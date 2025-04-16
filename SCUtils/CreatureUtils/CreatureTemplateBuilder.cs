@@ -10,6 +10,8 @@ namespace SCUtils.CreatureUtils
         readonly CreatureTemplate.Type type;
         readonly CreatureTemplate? ancestor;
 
+        string name;
+
         /// <summary> 生物的基础伤害抗性，默认为1防止忘记填写 </summary>
         float baseDamageResistance = 1f;
         float baseStunResistance;
@@ -55,6 +57,8 @@ namespace SCUtils.CreatureUtils
             this.type = type;
             this.ancestor = StaticWorld.GetCreatureTemplate(ancestor);
         }
+
+        public CreatureTemplateBuilder SetName(string name) { this.name = name; return this; }
 
         /// <summary>
         /// 设置生物的伤害和眩晕抗性

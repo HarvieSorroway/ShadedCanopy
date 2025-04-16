@@ -29,5 +29,28 @@ namespace SCUtils
 
                 .BuildTemplate();
         }
+
+        public class FlashFalconState : HealthState
+        {
+            [CreatureStateProxy.AutoProxyField] float aggressionToPlayer;
+            [CreatureStateProxy.AutoProxyField] bool hasHatching;
+
+            public FlashFalconState(AbstractCreature abstractCreature) : base(abstractCreature)
+            {
+                aggressionToPlayer = 0f;
+                hasHatching = true;
+            }
+
+            public override void LoadFromString(string[] s)
+            {
+                base.LoadFromString(s);
+                CreatureStateProxy.FromString<FlashFalconState>(this, s);
+            }
+
+            public override string ToString()
+            {
+                return base.ToString() + CreatureStateProxy.ExrtraValToString<FlashFalconState>(this);
+            }
+        }
     }
 }

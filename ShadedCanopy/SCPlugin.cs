@@ -28,35 +28,11 @@ namespace ShadedCanopy
         public void OnEnable()
         {
             On.RainWorld.OnModsInit += RainWorld_OnModsInit;
-            On.RainWorld.LoadModResources += RainWorld_LoadModResources;
 
             ShimmerSlugcat.PlayerHooks.Hooks();
             ShimmerSlugcat.PGraphicHooks.Hooks();
         }
 
-        private void RainWorld_LoadModResources(On.RainWorld.orig_LoadModResources orig, RainWorld self)
-        {
-            orig(self);
-            if (!inited)
-            {
-                inited = true;
-                ShimmerSlugcat.ShimmerPlugin.LoadShimmerAsset(self);
-            }
-        }
-
-        private void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
-        {
-            orig(self);
-
-        }
-        
-
-        public void OnEnable()
-        {
-            On.RainWorld.OnModsInit += RainWorld_OnModsInit;
-        }
-
-        static bool inited;
         private void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig.Invoke(self);
@@ -64,13 +40,11 @@ namespace ShadedCanopy
                 return;
 
             FlashingEffectManager.Init();
+            ShimmerSlugcat.ShimmerPlugin.LoadShimmerAsset(self);
 
             inited = true;
         }
+        
 
-        public static void LoadAssets()
-        {
-
-        }
     }
 }

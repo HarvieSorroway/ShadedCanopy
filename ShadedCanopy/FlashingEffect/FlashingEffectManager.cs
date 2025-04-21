@@ -18,7 +18,7 @@ namespace ShadedCanopy.FlashingEffect
 
         public static void Init()
         {
-            HooksOn();
+            //HooksOn();
             LoadAssets();
         }
 

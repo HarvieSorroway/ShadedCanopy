@@ -70,11 +70,18 @@ namespace SCUtils.CreatureUtils
             }
         }
 
-        internal class ProxiedFieldData(string name, FieldInfo field, Type fieldType)
+        internal class ProxiedFieldData
         {
-            public string name = name;
-            public FieldInfo field = field;
-            public Type fieldType = fieldType;
+            public string name;
+            public FieldInfo field;
+            public Type fieldType;
+
+            public ProxiedFieldData(string name, FieldInfo field, Type fieldType)
+            {
+                this.name = name;
+                this.field = field;
+                this.fieldType = fieldType;
+            }
         }
 
         public class AutoProxyField : Attribute { }

@@ -17,7 +17,7 @@ namespace ShadedCanopy.ShimmerSlugcat
         {
             try
             {
-                string path = AssetManager.ResolveFilePath("Assets/shimmerbodyshader");
+                string path = AssetManager.ResolveFilePath("AssetBundles/shimmerbodyshader");
                 AssetBundle ab = AssetBundle.LoadFromFile(path);
                 ShimmerSkin = ab.LoadAsset<Shader>("Assets/ShimmerSkin.shader");
                 rainWorld.Shaders.Add("ShimmerSkin", FShader.CreateShader("ShimmerSkin", ShimmerSkin));

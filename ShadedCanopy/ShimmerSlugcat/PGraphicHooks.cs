@@ -27,7 +27,7 @@ namespace ShadedCanopy.ShimmerSlugcat
 
                 for (int i = 0; i < 10; i++)
                 {
-                    if (sLeaser.sprites[i].container != fContainer)
+                    if (!flag && sLeaser.sprites[i].container != fContainer)
                     {
                         sLeaser.sprites[i].RemoveFromContainer();
                         fContainer.AddChild(sLeaser.sprites[i]);
@@ -53,7 +53,7 @@ namespace ShadedCanopy.ShimmerSlugcat
 
                     if (sLeaser.sprites[i]._renderLayer != null)
                     {
-                        sLeaser.sprites[i]._renderLayer._material.SetFloat("_ShimmerTailLightness", module.energy / 300f);
+                        sLeaser.sprites[i]._renderLayer._material.SetFloat("_ShimmerTailLightness", module.energy / PlayerHooks.ShimmerPlayerModule.maxEnergy);
                     }
                 }
 

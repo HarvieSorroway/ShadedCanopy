@@ -1,11 +1,15 @@
 ﻿
+using Expedition;
+using MoreSlugcats;
 using RWCustom;
+using ShadedCanopy.Effect.SCSuperStructureEffect;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using Watcher;
 
 namespace ShadedCanopy.FlashingEffect
 {
@@ -32,18 +36,186 @@ namespace ShadedCanopy.FlashingEffect
             RadialBlurKernalIndex = LevelMaskCS.FindKernel("RadialBlur");
 
             FlashBangShader = shadedcanopybundle.LoadAsset<Shader>("assets/myshader/flashbang.shader");
-            //Custom.rainWorld.Shaders.Add("SC_FlashBang", FShader.CreateShader("SC_FlashBang", shadedcanopybundle.LoadAsset<Shader>("assets/myshader/flashbang.shader")));
+
+
+            Custom.rainWorld.Shaders.Add("LevelMaskTest", FShader.CreateShader("SC_FlashBang", shadedcanopybundle.LoadAsset<Shader>("assets/myshader/levelmasktest.shader")));
         }
 
         public static void HooksOn()
         {
             On.Player.Jump += Player_Jump;
+            On.Room.NowViewed += Room_NowViewed;
+        }
+
+        private static void Room_NowViewed(On.Room.orig_NowViewed orig, Room self)
+        {
+            if (self.snowObject == null)
+            {
+                Shader.DisableKeyword("SNOW_ON");
+            }
+            Shader.SetGlobalFloat(RainWorld.ShadPropRimFix, 0f);
+            if ((self.world.region != null && self.world.region.name == "HR") || self.roomSettings.GetEffect(RoomSettings.RoomEffect.Type.LavaSurface) != null)
+            {
+                Shader.EnableKeyword("HR");
+            }
+            else
+            {
+                Shader.DisableKeyword("HR");
+            }
+            Shader.DisableKeyword("URBANLIFE");
+            Shader.SetGlobalColor("_boxWormColor", BoxWormGraphics.BaseColor(self));
+            if (self.fsRipple == null)
+            {
+                if (self.game.cameras[0].lastRippleState)
+                {
+                    self.AddObject(self.fsRipple = new RippleFullScreen());
+                }
+            }
+            else if (!self.game.cameras[0].lastRippleState)
+            {
+                self.fsRipple.Destroy();
+                self.fsRipple = null;
+            }
+            for (int i = 0; i < self.roomSettings.effects.Count; i++)
+            {
+                if (self.roomSettings.effects[i].type == RoomSettings.RoomEffect.Type.GreenSparks)
+                {
+                    int num = 0;
+                    while ((float)num < (float)(self.TileWidth * self.TileHeight) * self.roomSettings.effects[i].amount / 50f)
+                    {
+                        Vector2 vector = new Vector2(UnityEngine.Random.value * self.PixelWidth, UnityEngine.Random.value * self.PixelHeight);
+                        if (!self.GetTile(vector).Solid && Mathf.Pow(UnityEngine.Random.value, 1f - self.roomSettings.effects[i].amount) > (float)(self.readyForAI ? self.aimap.getTerrainProximity(vector) : 5) * 0.05f && self.roomSettings.effects[i].type == RoomSettings.RoomEffect.Type.GreenSparks)
+                        {
+                            self.AddObject(new GreenSparks.GreenSpark(vector));
+                        }
+                        num++;
+                    }
+                }
+                else if (self.roomSettings.effects[i].type == RoomSettings.RoomEffect.Type.ZeroGSpecks)
+                {
+                    int num2 = 0;
+                    while ((float)num2 < 1000f * self.roomSettings.effects[i].amount)
+                    {
+                        self.AddObject(new BlinkSpeck());
+                        num2++;
+                    }
+                }
+                else if (self.roomSettings.effects[i].type == RoomSettings.RoomEffect.Type.CorruptionSpores)
+                {
+                    int num3 = 0;
+                    while ((float)num3 < 200f * self.roomSettings.effects[i].amount)
+                    {
+                        self.AddObject(new CorruptionSpore());
+                        num3++;
+                    }
+                }
+                else if (self.roomSettings.effects[i].type == RoomSettings.RoomEffect.Type.SuperStructureProjector)
+                {
+                    //self.AddObject(new SuperStructureProjector(self, self.roomSettings.effects[i]));
+                    self.AddObject(new SCSuperStructureProj(self));
+                }
+                else if (self.roomSettings.effects[i].type == RoomSettings.RoomEffect.Type.ProjectedScanLines)
+                {
+                    //self.AddObject(new ProjectedScanLines(self, self.roomSettings.effects[i]));
+                }
+                else if (self.roomSettings.effects[i].type == RoomSettings.RoomEffect.Type.AboveCloudsView)
+                {
+                    Shader.SetGlobalFloat(RainWorld.ShadPropRimFix, 1f);
+                }
+                else if (self.roomSettings.effects[i].type == RoomSettings.RoomEffect.Type.RoofTopView)
+                {
+                    Shader.SetGlobalFloat(RainWorld.ShadPropRimFix, 1f);
+                }
+                else if (ModManager.Watcher && (self.roomSettings.effects[i].type == WatcherEnums.RoomEffectType.OuterRimView || self.roomSettings.effects[i].type == WatcherEnums.RoomEffectType.AncientUrbanView || self.roomSettings.effects[i].type == WatcherEnums.RoomEffectType.InnerOuterRimView))
+                {
+                    Shader.SetGlobalFloat(RainWorld.ShadPropRimFix, 1f);
+                }
+                else if (self.roomSettings.effects[i].type == RoomSettings.RoomEffect.Type.PinkSky)
+                {
+                    Shader.SetGlobalFloat(RainWorld.ShadPropRimFix, 1f);
+                }
+                else if (self.roomSettings.effects[i].type == RoomSettings.RoomEffect.Type.FairyParticles)
+                {
+                    int num4 = 0;
+                    while ((float)num4 < 500f * self.roomSettings.effects[i].amount)
+                    {
+                        int num5 = ((UnityEngine.Random.value < 0.5f) ? 3 : 4);
+                        FairyParticle fairyParticle = new FairyParticle((float)UnityEngine.Random.Range(0, 360), num5, 60f, 180f, 40f, 100f, 5f, 30f);
+                        self.AddObject(fairyParticle);
+                        num4++;
+                    }
+                    for (int j = 0; j < self.roomSettings.placedObjects.Count; j++)
+                    {
+                        if (self.roomSettings.placedObjects[j].type == PlacedObject.Type.FairyParticleSettings)
+                        {
+                            (self.roomSettings.placedObjects[j].data as PlacedObject.FairyParticleData).Apply(self);
+                            break;
+                        }
+                    }
+                }
+                else if (self.roomSettings.effects[i].type == RoomSettings.RoomEffect.Type.DayNight)
+                {
+                    for (int k = 0; k < self.roomSettings.placedObjects.Count; k++)
+                    {
+                        if (self.roomSettings.placedObjects[k].type == PlacedObject.Type.DayNightSettings)
+                        {
+                            (self.roomSettings.placedObjects[k].data as PlacedObject.DayNightData).Apply(self);
+                            break;
+                        }
+                    }
+                }
+            }
+            if (ModManager.Expedition && self.game.rainWorld.ExpeditionMode && ExpeditionGame.activeUnlocks.Contains("bur-blinded"))
+            {
+                new PlacedObject.DayNightData(null)
+                {
+                    nightPalette = 10
+                }.Apply(self);
+                if (self.game.cameras[0].currentPalette.darkness < 0.8f)
+                {
+                    self.game.cameras[0].effect_dayNight = 1f;
+                    self.game.cameras[0].currentPalette.darkness = 0.8f;
+                }
+                self.roomSettings.Clouds = 0.875f;
+                self.world.rainCycle.sunDownStartTime = 0;
+                self.world.rainCycle.dayNightCounter = 3750;
+            }
+            for (int l = 0; l < self.physicalObjects.Length; l++)
+            {
+                for (int m = 0; m < self.physicalObjects[l].Count; m++)
+                {
+                    self.physicalObjects[l][m].InitiateGraphicsModule();
+                    if (self.physicalObjects[l][m].graphicsModule != null && !self.drawableObjects.Contains(self.physicalObjects[l][m].graphicsModule))
+                    {
+                        self.drawableObjects.Add(self.physicalObjects[l][m].graphicsModule);
+                    }
+                }
+            }
+            if (self.world.worldGhost != null)
+            {
+                for (int n = 0; n < self.cameraPositions.Length; n++)
+                {
+                    if (self.world.worldGhost.GhostMode(self, n) > 0f && (!ModManager.Watcher || self.world.worldGhost.ghostID != WatcherEnums.GhostID.SpinningTop))
+                    {
+                        self.AddObject(new GoldFlakes(self));
+                        break;
+                    }
+                }
+            }
+            if (self.insectCoordinator != null)
+            {
+                self.insectCoordinator.NowViewed();
+            }
         }
 
         private static void Player_Jump(On.Player.orig_Jump orig, Player self)
         {
             orig.Invoke(self);
+            if (self.room.updateList.Where((u) => u is SCBoids).Count() > 0)
+                return;
+            //self.room.AddObject(new LevelMaskTest(self.room, self.firstChunk));
             self.room.AddObject(new FlashingEffectTest(self.room, self.firstChunk));
+            //self.room.AddObject(new BoidsEffect(self.room, 300));
         }
     }
 

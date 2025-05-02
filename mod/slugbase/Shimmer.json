@@ -1,0 +1,71 @@
+{
+	"id": "Shimmer",
+	"name": "The Shimmer",
+	"description": "A recolored copy of The Survivor that demonstrates some custom SlugBase features.<LINE>This is a template mod for SlugBase.",
+	"features": {
+		"color": "121213",
+		"custom_colors": [
+		{
+			"name": "Body",
+			"story": "121212",
+			"arena": [ "121213", "121213", "121213", "121213" ]
+		},
+		{
+			"name": "Eyes",
+			"story": "ffffff",
+			"arena": [ "ffffff", "ffffff", "ffffff", "ffffff" ]
+		}		
+],				
+
+		"select_menu_scene": "Slugcat_Shimmer",
+		"select_menu_scene_ascended": "Ghost_Shimmer",
+
+
+	"the_mark": false,
+	"the_glow": false,
+	"auto_grab_batflies": true,
+	"weight": 0.8,
+	"tunnel_speed": 1.2,
+	"climb_speed": 1.2,
+	"walk_speed": 1.2,
+	"crouch_stealth": 1.0,
+	"throw_skill": 1.0,
+	"lung_capacity": 1.0,
+	"loudness": 0.4,
+
+	"alignments": {
+		"Lizards": {
+			"like": 0,
+			"locked": false
+			
+		},
+		"Scavengers": {
+			"like": 0.2,
+			"locked": false
+		}
+	},
+
+	"karma": 1,
+	"karma_cap": 4,
+
+	"has_dreams": false,
+	"use_default_dreams": false,
+
+	"food_min": 4,
+	"food_max": 7,
+	"diet": {
+		"base": "White",
+		"corpses": 1,
+		"plants": 1,
+		"meat":1,
+		"overrides": {
+			
+		}
+	},
+	"world_state": "White",
+	"timeline_after": "White",	
+	"start_room": "SU_S01",
+	"expedition_description": "Wawawa."
+	
+	}
+}

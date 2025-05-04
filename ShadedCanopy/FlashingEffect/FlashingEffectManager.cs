@@ -17,12 +17,16 @@ namespace ShadedCanopy.FlashingEffect
     {
         public static ComputeShader LevelMaskCS { get; private set; }
         public static Shader FlashBangShader { get; private set; }
+        public static Shader DeadlyLightShader { get; private set; }
         public static int CreateLightMaskKernalIndex { get; private set; }
         public static int RadialBlurKernalIndex { get; private set; }
+        public static int PenumbraKernalIndex { get; private set; }
+        public static int StretchPenumbraKernalIndex { get; private set; }
+        public static int FinalizeKernalIndex { get; private set; }
 
         public static void Init()
         {
-            //HooksOn();
+            HooksOn();
             LoadAssets();
         }
 
@@ -34,11 +38,15 @@ namespace ShadedCanopy.FlashingEffect
             LevelMaskCS = shadedcanopybundle.LoadAsset<ComputeShader>("assets/myshader/levellightmask.compute");
             CreateLightMaskKernalIndex = LevelMaskCS.FindKernel("CreateLightMask");
             RadialBlurKernalIndex = LevelMaskCS.FindKernel("RadialBlur");
+            PenumbraKernalIndex = LevelMaskCS.FindKernel("Penumbra");
+            FinalizeKernalIndex = LevelMaskCS.FindKernel("FinalizeResult");
+            StretchPenumbraKernalIndex = LevelMaskCS.FindKernel("StretchPenumbra");
 
             FlashBangShader = shadedcanopybundle.LoadAsset<Shader>("assets/myshader/flashbang.shader");
+            DeadlyLightShader = shadedcanopybundle.LoadAsset<Shader>("assets/myshader/deadlylight.shader");
 
-
-            Custom.rainWorld.Shaders.Add("LevelMaskTest", FShader.CreateShader("SC_FlashBang", shadedcanopybundle.LoadAsset<Shader>("assets/myshader/levelmasktest.shader")));
+            Custom.rainWorld.Shaders.Add("DeadlyLight", FShader.CreateShader("SC_DeadlyLight", DeadlyLightShader));
+            Custom.rainWorld.Shaders.Add("DeadlyLight_ForegroundGrab", FShader.CreateShader("DeadlyLight_ForegroundGrab", shadedcanopybundle.LoadAsset<Shader>("assets/myshader/foregroundgrab.shader")));
         }
 
         public static void HooksOn()
@@ -223,6 +231,7 @@ namespace ShadedCanopy.FlashingEffect
     {
         static int maxLoadRoomGeometry = 5;
         static Dictionary<string, Texture2D> roomGeometryTexs = new Dictionary<string, Texture2D>();
+        static Dictionary<Vector2Int, RenderTexture> interTex = new Dictionary<Vector2Int, RenderTexture>();
         static List<string> lastLoadedRoom = new List<string>();
 
         /// <summary> 创建当前房间的几何信息贴图并自动托管。一共只会暂存<see cref="FlashingEffectManager.maxLoadRoomGeometry"/>张贴图，超出数量的贴图将会被销毁 </summary>
@@ -270,12 +279,12 @@ namespace ShadedCanopy.FlashingEffect
         /// <param name="lightSourceRoomPos"></param>
         /// <param name="pixPerTile">每个room中的tile对应levelmask的像素宽度，需要与<see cref="FlashingEffectManager.CaculateLevelMask(RenderTexture, Room, Vector2, int)"/>中所指定的值一致</param>
         /// <returns></returns>
-        public static RenderTexture CreateMask(Room room, Vector2 lightSourceRoomPos, int pixPerTile)
+        public static RenderTexture CreateMask(Room room, int pixPerTile, Vector2 lightSourceRoomPos, Vector2? biasedLightSourcePos = null)
         {
             RenderTexture renderTexture = new RenderTexture(room.Width * pixPerTile, room.Height * pixPerTile, 0) { filterMode = FilterMode.Bilinear };
             renderTexture.enableRandomWrite = true;
 
-            CaculateLevelMask(renderTexture, room, lightSourceRoomPos, pixPerTile);
+            CaculateLevelMask(renderTexture, room, pixPerTile, lightSourceRoomPos);
 
             return renderTexture;
         }
@@ -284,21 +293,75 @@ namespace ShadedCanopy.FlashingEffect
         /// <param name="renderTexture">使用的rt</param>
         /// <param name="lightSourceRoomPos">光源点在room内的坐标，不使用屏幕坐标</param>
         /// <param name="pixPerTile">每个room中的tile对应levelmask的像素宽度，需要与<see cref="FlashingEffectManager.CreateMask(Room, Vector2, int)"/>中所指定的值一致</param>
-        public static void CaculateLevelMask(RenderTexture renderTexture, Room room, Vector2 lightSourceRoomPos, int pixPerTile)
+        /// <param name="biasedLightSourcePos">偏移后实际用于计算方向的光源坐标，同样使用room内的坐标。主要用于实现锥形光照</param>
+        /// <param name="range">实际计算光照的tile半径，用于优化</param>
+        public static void CaculateLevelMask(RenderTexture renderTexture, Room room, int pixPerTile, Vector2 lightSourceRoomPos, Vector2? biasedLightSourcePos = null, float range = 30f)
         {
             Vector4 normalizedLightSourceRoomPos = new Vector4(lightSourceRoomPos.x / 20f, lightSourceRoomPos.y / 20f, 0f, 0f);//默认一个tile为20单位长宽，进行归一化处理
+            Vector4 normalizedBiasedLightSourceRoomPos = biasedLightSourcePos == null ? normalizedLightSourceRoomPos : new Vector4(biasedLightSourcePos.Value.x / 20f, biasedLightSourcePos.Value.y / 20f, 0f, 0f);
+
             Vector2Int dispatchGrounpSize = new Vector2Int(Mathf.CeilToInt(room.Width * pixPerTile / 8f), Mathf.CeilToInt(room.Height * pixPerTile / 8f));
 
-            var roomGeometry = TryLoadLevelGeometryTex(room);//防止room geometry未加载
-            LevelMaskCS.SetTexture(CreateLightMaskKernalIndex, "Result", renderTexture);
-            LevelMaskCS.SetTexture(CreateLightMaskKernalIndex, "RoomGeometry", roomGeometry);
             LevelMaskCS.SetVector("TargetRoomPos", normalizedLightSourceRoomPos);
+            LevelMaskCS.SetVector("LightRoomPos", normalizedBiasedLightSourceRoomPos);
+            LevelMaskCS.SetFloat("maxTileDistance", range);
+
+            var interTex = GetInterTex(renderTexture);
+
+            var roomGeometry = TryLoadLevelGeometryTex(room);//防止room geometry未加载
+
+            //遮罩计算
+            LevelMaskCS.SetTexture(CreateLightMaskKernalIndex, "Result", renderTexture);
+            LevelMaskCS.SetTexture(CreateLightMaskKernalIndex, "InterTex", interTex);
+            LevelMaskCS.SetTexture(CreateLightMaskKernalIndex, "RoomGeometry", roomGeometry);
+
             LevelMaskCS.Dispatch(CreateLightMaskKernalIndex, dispatchGrounpSize.x, dispatchGrounpSize.y, 1);
 
+            //半影计算
+            LevelMaskCS.SetTexture(PenumbraKernalIndex, "Result", renderTexture);
+            LevelMaskCS.SetTexture(PenumbraKernalIndex, "InterTex", interTex);
+            LevelMaskCS.SetTexture(PenumbraKernalIndex, "RoomGeometry", roomGeometry);
+
+            LevelMaskCS.Dispatch(PenumbraKernalIndex, dispatchGrounpSize.x, dispatchGrounpSize.y, 1);
+
+            //合并输出
+            LevelMaskCS.SetTexture(FinalizeKernalIndex, "Result", renderTexture);
+            LevelMaskCS.SetTexture(FinalizeKernalIndex, "InterTex", interTex);
+            LevelMaskCS.SetTexture(FinalizeKernalIndex, "RoomGeometry", roomGeometry);
+
+            LevelMaskCS.Dispatch(FinalizeKernalIndex, dispatchGrounpSize.x, dispatchGrounpSize.y, 1);
+
+            //半影延申
+            LevelMaskCS.SetTexture(StretchPenumbraKernalIndex, "Result", renderTexture);
+            LevelMaskCS.SetTexture(StretchPenumbraKernalIndex, "InterTex", interTex);
+            LevelMaskCS.SetTexture(StretchPenumbraKernalIndex, "RoomGeometry", roomGeometry);
+
+            LevelMaskCS.Dispatch(StretchPenumbraKernalIndex, dispatchGrounpSize.x, dispatchGrounpSize.y, 1);
+
+            //合并输出
+            LevelMaskCS.Dispatch(FinalizeKernalIndex, dispatchGrounpSize.x, dispatchGrounpSize.y, 1);
+
+            //摸糊计算
             LevelMaskCS.SetTexture(RadialBlurKernalIndex, "Result", renderTexture);
+            LevelMaskCS.SetTexture(RadialBlurKernalIndex, "InterTex", interTex);
             LevelMaskCS.SetTexture(RadialBlurKernalIndex, "RoomGeometry", roomGeometry);
-            LevelMaskCS.SetVector("TargetRoomPos", normalizedLightSourceRoomPos);
             LevelMaskCS.Dispatch(RadialBlurKernalIndex, dispatchGrounpSize.x, dispatchGrounpSize.y, 1);
+
+            //合并输出
+            LevelMaskCS.Dispatch(FinalizeKernalIndex, dispatchGrounpSize.x, dispatchGrounpSize.y, 1);
+        }
+
+        public static RenderTexture GetInterTex(RenderTexture target)
+        {
+            Vector2Int size = new Vector2Int(target.width, target.height);
+            if(!interTex.TryGetValue(size, out var tex))
+            {
+                tex = new RenderTexture(size.x, size.y, 0) { filterMode = FilterMode.Bilinear };
+                tex.enableRandomWrite = true;
+
+                interTex.Add(size, tex);
+            }
+            return tex;
         }
     }
 

@@ -21,7 +21,7 @@ namespace ShadedCanopy.FlashingEffect
         {
             this.room = room;
             this.bindchunk = bodyChunk;
-            levelMask = FlashingEffectManager.CreateMask(room, pos, pixPerTile);
+            levelMask = FlashingEffectManager.CreateMask(room, pixPerTile, pos);
             levelMaskScale = pixPerTile / 20f;
         }
 
@@ -62,7 +62,7 @@ namespace ShadedCanopy.FlashingEffect
             }
 
             if (MaskNeedUpdate && !slatedForDeletetion)
-                FlashingEffectManager.CaculateLevelMask(levelMask, room, smoothPos, pixPerTile);
+                FlashingEffectManager.CaculateLevelMask(levelMask, room, pixPerTile, smoothPos);
         }
 
         public override void Destroy()

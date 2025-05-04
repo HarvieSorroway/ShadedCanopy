@@ -12,13 +12,11 @@ namespace ShadedCanopy.Effect.SCSuperStructureEffect
     internal class SCBoids : SCSuperStructureProjPart
     {
         static int boidSpriteStartIndex = 0;
+        static int batchCount = 3;
 
+        int logicIndex;
         HashSet<Boid>[,] tileOfBoids;
         public List<Boid> totBoids = new List<Boid>();
-
-        float followedBoidCount;
-        int followedBoidIndex, noSwitchCounter;
-        Vector2 followedBoidPos, lastFollowedBoidPos;
 
 
         public new Room room => projector.room;
@@ -40,7 +38,7 @@ namespace ShadedCanopy.Effect.SCSuperStructureEffect
             //散步boid
             for (int i = 0; i < boidsCount; i++)
             {
-                newBoid = new Boid(this, new Vector2(Random.value * room.Width * 20f, Random.value * room.Height * 20f));
+                newBoid = new Boid(this, new Vector2(Random.value * room.Width * 20f, Random.value * room.Height * 20f), i % batchCount);
                 totBoids.Add(newBoid);
             }
         }
@@ -49,8 +47,9 @@ namespace ShadedCanopy.Effect.SCSuperStructureEffect
         {
             base.Update(eu);
 
+            logicIndex = (logicIndex + 1) % batchCount;
             foreach (var boid in totBoids)
-                boid.Update();
+                boid.Update(logicIndex);
         }
 
         public override void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam)
@@ -131,6 +130,7 @@ namespace ShadedCanopy.Effect.SCSuperStructureEffect
 
         public class Boid
         {
+            int logicIndex;
             public float vel;
             public Vector2 dir;
             public Vector2 pos, lastPos;
@@ -141,9 +141,10 @@ namespace ShadedCanopy.Effect.SCSuperStructureEffect
 
             SCBoids effect;
 
-            public Boid(SCBoids effect, Vector2 initPos)
+            public Boid(SCBoids effect, Vector2 initPos, int logicIndex)
             {
                 this.effect = effect;
+                this.logicIndex = logicIndex;
                 pos = lastPos = initPos;
                 lastTile = new IntVector2(-1, -1);
                 tile = effect.room.GetTilePosition(pos);
@@ -153,6 +154,7 @@ namespace ShadedCanopy.Effect.SCSuperStructureEffect
                 dir = Custom.RNV();
                 vel = Mathf.Lerp(5f, 15f, Random.value);
                 randomBias = Random.value;
+
             }
 
             public Vector2 Vel
@@ -161,7 +163,7 @@ namespace ShadedCanopy.Effect.SCSuperStructureEffect
                 set { dir = value.normalized; vel = value.magnitude; }
             }
 
-            public void Update()
+            public void Update(int logicIndex)
             {
                 lastPos = pos;
                 pos += Vel;
@@ -194,12 +196,20 @@ namespace ShadedCanopy.Effect.SCSuperStructureEffect
 
                 effect.ArrangeBoid(this);
 
-                bool skipBoidsLogic = TerrainCheck();
-                float skipUpdateRate = Mathf.Lerp(0f, 0.9f, Mathf.InverseLerp(10f, 50f, effect.GetBoidWithinRad(this, pos, 40f).Count()));
-                if (Random.value < skipUpdateRate)
+                bool skipBoidsLogic = false;
+                if (logicIndex == this.logicIndex)
                 {
-                    skipBoidsLogic = true;
+                    skipBoidsLogic = TerrainCheck();
+                    float skipUpdateRate = Mathf.Lerp(0f, 0.9f, Mathf.InverseLerp(10f, 50f, effect.GetBoidWithinRad(this, pos, 40f).Count()));
+                    if (Random.value < skipUpdateRate)
+                    {
+                        skipBoidsLogic = true;
+                    }
                 }
+                else
+                    skipBoidsLogic = true;
+
+
                 if(!skipBoidsLogic)
                 {
                     Seperation();
@@ -214,7 +224,7 @@ namespace ShadedCanopy.Effect.SCSuperStructureEffect
                 //    flash--;
             }
 
-            void Seperation()
+            void Seperation()//分离
             {
                 int count = 0;
                 Vector2 center = Vector2.zero;
@@ -234,7 +244,7 @@ namespace ShadedCanopy.Effect.SCSuperStructureEffect
                 Vel += delta.normalized * Mathf.Lerp(10f, 0.1f, delta.magnitude / 5f);
             }
 
-            void Cohesion()
+            void Cohesion()//聚集
             {
                 int count = 0;
                 Vector2 center = Vector2.zero;
@@ -251,14 +261,13 @@ namespace ShadedCanopy.Effect.SCSuperStructureEffect
                 Vector2 delta = center - pos;
                 if (delta.magnitude > 10f)
                 {
-                    //Vel += (delta).normalized * Mathf.Clamp((10f / (delta.magnitude + 1f)), 0, 0.75f);
-                    dir = Vector3.Slerp(dir, delta.normalized, 0.035f);
+                    dir = Vector3.Slerp(dir, delta.normalized, 0.055f);
                 }
 
 
             }
 
-            void Alignment()
+            void Alignment()//同向
             {
                 int count = 0;
                 Vector2 alignmentVel = Vector2.zero;
@@ -271,10 +280,10 @@ namespace ShadedCanopy.Effect.SCSuperStructureEffect
                     return;
                 alignmentVel /= count;
 
-                dir = Vector3.Slerp(dir, alignmentVel.normalized, 0.1f);
+                dir = Vector3.Slerp(dir, alignmentVel.normalized, 0.25f);
             }
 
-            bool TerrainCheck()
+            bool TerrainCheck()//避障
             {
                 bool result = false;
                 if (effect.room.aimap.getTerrainProximity(pos) < 5)

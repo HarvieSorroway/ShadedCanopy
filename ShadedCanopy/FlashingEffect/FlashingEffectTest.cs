@@ -34,7 +34,7 @@ namespace ShadedCanopy.FlashingEffect
             this.bindChunk = bindChunk;
             this.pos = this.lastPos = bindChunk.pos;
 
-            levelMask = FlashingEffectManager.CreateMask(room, pos, pixPerTile);
+            levelMask = FlashingEffectManager.CreateMask(room, pixPerTile, pos);
             levelMaskScale = pixPerTile / 20f;
             flashBangShaderInstace_1 = FlashingEffectManager.GetFlashBangShaderInstance();
             flashBangShaderInstace_2 = FlashingEffectManager.GetFlashBangShaderInstance();
@@ -144,7 +144,7 @@ namespace ShadedCanopy.FlashingEffect
             }
 
             if (MaskNeedUpdate && !slatedForDeletetion)
-                FlashingEffectManager.CaculateLevelMask(levelMask, room, smoothPos, pixPerTile);
+                FlashingEffectManager.CaculateLevelMask(levelMask, room, pixPerTile, smoothPos);
 
             if (sLeaser.sprites[0]._renderLayer != null)
             {

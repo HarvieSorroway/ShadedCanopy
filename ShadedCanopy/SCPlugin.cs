@@ -8,6 +8,7 @@ using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
 using System.Security.Permissions;
+using SCUtils;
 
 
 #pragma warning disable CS0618
@@ -29,9 +30,6 @@ namespace ShadedCanopy
         public void OnEnable()
         {
             On.RainWorld.OnModsInit += RainWorld_OnModsInit;
-
-            ShimmerSlugcat.PlayerHooks.Hooks();
-            ShimmerSlugcat.PGraphicHooks.Hooks();
         }
 
         private void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
@@ -40,10 +38,14 @@ namespace ShadedCanopy
             if (inited)
                 return;
 
+            ShimmerSlugcat.PlayerHooks.Hooks();
+            ShimmerSlugcat.PGraphicHooks.Hooks();
             FlashingEffectManager.Init();
             ShimmerSlugcat.ShimmerPlugin.LoadShimmerAsset(self);
             ScavengerHooks.HooksOn();
+            PlacedObjects.DevExtend.DevHooks.HooksOn();
 
+            Utils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");
             inited = true;
         }
         

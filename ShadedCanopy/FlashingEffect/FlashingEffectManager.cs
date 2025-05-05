@@ -6,10 +6,12 @@ using ShadedCanopy.Effect.SCSuperStructureEffect;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using Watcher;
+using static ShadedCanopy.FlashingEffect.FlashingEffectManager;
 
 namespace ShadedCanopy.FlashingEffect
 {
@@ -351,7 +353,9 @@ namespace ShadedCanopy.FlashingEffect
             LevelMaskCS.Dispatch(FinalizeKernalIndex, dispatchGrounpSize.x, dispatchGrounpSize.y, 1);
         }
 
-        public static RenderTexture GetInterTex(RenderTexture target)
+        /// <summary> 创建计算用的中间贴图，详细使用参考<see cref="CaculateLevelMask"/> </summary>
+        /// <param name="target">目标贴图</param>
+        static RenderTexture GetInterTex(RenderTexture target)
         {
             Vector2Int size = new Vector2Int(target.width, target.height);
             if(!interTex.TryGetValue(size, out var tex))
@@ -367,40 +371,78 @@ namespace ShadedCanopy.FlashingEffect
 
     internal static partial class FlashingEffectManager
     {
-        static List<FlashBangShaderInstance> flashBangShaderInstances = new List<FlashBangShaderInstance>();
+        static List<ShaderInstance> shaderInstances = new List<ShaderInstance>();
 
 
-        public static FlashBangShaderInstance GetFlashBangShaderInstance()
+        /// <summary>创建一个shader副本，用于防止合批处理,参考<see cref="FlashingEffectManager.ShaderInstance"/></summary>
+        /// <typeparam name="T"></typeparam>
+        public static T GetShaderInstance<T>() where T : ShaderInstance
         {
-            FlashBangShaderInstance result = null;
-            foreach (var instance in flashBangShaderInstances)
+            T result = null;
+            int count = 0;
+            foreach(var instance in shaderInstances.Where(i => i is T))
             {
                 if (!instance.used)
                 {
-                    result = instance;
+                    result = instance as T;
                     break;
                 }
+                count++;
             }
-            if(result == null)
+            if (result == null)
             {
-                result = new FlashBangShaderInstance(flashBangShaderInstances.Count);
-                flashBangShaderInstances.Add(result);
+                result = InternalCreateNewShaderInstance(typeof(T), count) as T;
             }
+
+            shaderInstances.Add(result);
             result.Get();
             return result;
         }
 
-        public class FlashBangShaderInstance
+        static ShaderInstance InternalCreateNewShaderInstance(Type t, int index)
         {
-            string shortName;
-            public string Shader => shortName;
+            if(t == typeof(FlashBangShaderInstance))
+                return new FlashBangShaderInstance(index);
+            else if(t == typeof(DeadlyLightShaderInstance))
+                return new DeadlyLightShaderInstance(index);
 
-            public bool used;
+            throw new ArgumentException($"{t} is not a valid ShaderInstance type");
+        }
 
-            public FlashBangShaderInstance(int index)
+        public class FlashBangShaderInstance : ShaderInstance
+        {
+            public override string ShaderName => "FlashBang";
+            public override Shader TargetShader => FlashBangShader;
+
+            public FlashBangShaderInstance(int index) : base(index)
             {
-                shortName = $"FlashBang_{index}";
-                Custom.rainWorld.Shaders.Add(shortName, FShader.CreateShader(shortName, FlashBangShader));
+            }
+        }
+
+        public class DeadlyLightShaderInstance : ShaderInstance
+        {
+
+            public override string ShaderName => "DeadlyLight";
+            public override Shader TargetShader => DeadlyLightShader;
+
+            public DeadlyLightShaderInstance(int index) : base(index)
+            {
+            }
+        }
+
+        public abstract class ShaderInstance
+        {
+            string shader;
+            public virtual string ShaderName => "";
+            public virtual Shader TargetShader => null;
+
+            public string Shader => shader;
+            public bool used { get; private set; }
+
+            public ShaderInstance(int index)
+            {
+                shader = $"{ShaderName}_{index}";
+                Custom.rainWorld.Shaders.Add(Shader, FShader.CreateShader(Shader, TargetShader));
             }
 
             public void Get()

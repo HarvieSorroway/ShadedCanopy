@@ -14,6 +14,7 @@ namespace ShadedCanopy.PlacedObjects.DeadlyLight
         public static Vector2 maxLightRangeLim = new Vector2(40f, 1200f);
         public static Vector2 penumbraWidthLim = new Vector2(10f, 1200f);
         public static Vector2 exposureLim = new Vector2(0f, 4f);
+        public static Vector2 clampedDepthLim = new Vector2(0, 30);
 
         int lineSprite;
         public DeadlyLightRep(DevUI owner, string IDstring, DevUINode parentNode, PlacedObject pObj)
@@ -73,6 +74,16 @@ namespace ShadedCanopy.PlacedObjects.DeadlyLight
                () =>
                {
                    return Mathf.InverseLerp(DeadlyLightRep.exposureLim.x, DeadlyLightRep.exposureLim.y, LightData.exposure);
+               }));
+            this.subNodes.Add(new DeadlyLightSlider(owner, "ClampedDepth_Slider", this, new Vector2(5f, height - 80f), "Clamped Depth: ",
+               (f) =>
+               {
+                   LightData.clampedDepth = Mathf.Clamp01(f);
+                   return $"{(LightData.clampedDepth):f2}";
+               },
+               () =>
+               {
+                   return Mathf.Clamp01(LightData.clampedDepth);
                }));
         }
 

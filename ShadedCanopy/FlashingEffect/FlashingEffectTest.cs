@@ -36,8 +36,8 @@ namespace ShadedCanopy.FlashingEffect
 
             levelMask = FlashingEffectManager.CreateMask(room, pixPerTile, pos);
             levelMaskScale = pixPerTile / 20f;
-            flashBangShaderInstace_1 = FlashingEffectManager.GetFlashBangShaderInstance();
-            flashBangShaderInstace_2 = FlashingEffectManager.GetFlashBangShaderInstance();
+            flashBangShaderInstace_1 = FlashingEffectManager.GetShaderInstance<FlashingEffectManager.FlashBangShaderInstance>();
+            flashBangShaderInstace_2 = FlashingEffectManager.GetShaderInstance<FlashingEffectManager.FlashBangShaderInstance>();
         }
 
     
@@ -175,6 +175,7 @@ namespace ShadedCanopy.FlashingEffect
             base.Destroy();
             if (slatedForDeletetion)
                 return;
+            levelMask.Release();
             UnityEngine.Object.Destroy(levelMask);
             flashBangShaderInstace_1.Release();
             flashBangShaderInstace_2.Release();

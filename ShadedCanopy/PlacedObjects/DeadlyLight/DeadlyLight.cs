@@ -19,6 +19,7 @@ namespace ShadedCanopy.PlacedObjects.DeadlyLight
         DeadlyLightData Data => placedObject.data as DeadlyLightData;
 
         Texture2D secondaryPalette;
+        FlashingEffectManager.DeadlyLightShaderInstance shaderInstance;
 
         public DeadlyLight(Room room, PlacedObject placedObject)
         {
@@ -28,11 +29,12 @@ namespace ShadedCanopy.PlacedObjects.DeadlyLight
 
             var param = GetMaskParam();
             mask = FlashingEffectManager.CreateMask(room, 20, param.Item1, param.Item2);
+            shaderInstance = FlashingEffectManager.GetShaderInstance<FlashingEffectManager.DeadlyLightShaderInstance>();
         }
 
         public override void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam)
         {
-            rCam.LoadPalette(36, ref secondaryPalette);
+            rCam.LoadPalette(0, ref secondaryPalette);
             sLeaser.sprites = new FSprite[7];
             sLeaser.sprites[0] = new FSprite("pixel", true)
             {
@@ -73,7 +75,7 @@ namespace ShadedCanopy.PlacedObjects.DeadlyLight
         {
             if (newContatiner == null)
             {
-                newContatiner = rCam.ReturnFContainer("ForegroundLights");
+                newContatiner = rCam.ReturnFContainer("GrabShaders");
             }
 
             sLeaser.sprites[0].RemoveFromContainer();
@@ -129,6 +131,7 @@ namespace ShadedCanopy.PlacedObjects.DeadlyLight
 
                 s._renderLayer._material.SetFloat("_LevelMaskScale", maskScale);
                 s._renderLayer._material.SetFloat("_Exposure", Data.exposure);
+                s._renderLayer._material.SetFloat("_ClampedDepth", Data.clampedDepth);
 
                 s._renderLayer._material.SetVector("_LevelMaskScrPos_LevelSize", _LevelMaskScrPos_LevelSize);
 
@@ -137,6 +140,16 @@ namespace ShadedCanopy.PlacedObjects.DeadlyLight
                 s._renderLayer._material.SetVector("lightScreenPos", param.Item2 - camPos);
             }
 
+        }
+
+        public override void Destroy()
+        {
+            base.Destroy();
+            shaderInstance.Release();
+            shaderInstance = null;
+
+            mask.Release();
+            UnityEngine.Object.Destroy(mask);
         }
 
         (Vector2, Vector2) GetMaskParam()

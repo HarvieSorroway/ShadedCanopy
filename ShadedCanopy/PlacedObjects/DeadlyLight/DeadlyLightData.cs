@@ -14,6 +14,7 @@ namespace ShadedCanopy.PlacedObjects.DeadlyLight
         public float maxLightRange;
         public float penumbraWidth;
         public float exposure;
+        public float clampedDepth;
         public bool reverseLightDir;
 
         public DeadlyLightData(PlacedObject owner) : base(owner)
@@ -48,12 +49,21 @@ namespace ShadedCanopy.PlacedObjects.DeadlyLight
                 exposure = float.Parse(array[7]);
             }
 
+            if (array.Length <= 8)
+            {
+                clampedDepth = 0;
+            }
+            else
+            {
+                clampedDepth = float.Parse(array[8]);
+            }
+
             unrecognizedAttributes = SaveUtils.PopulateUnrecognizedStringAttrs(array, 5);
         }
 
         public override string ToString()
         {
-            string res = $"{handlePos.x}~{handlePos.y}~{panelPos.x}~{panelPos.y}~{maxLightRange}~{penumbraWidth}~{reverseLightDir}~{exposure}";
+            string res = $"{handlePos.x}~{handlePos.y}~{panelPos.x}~{panelPos.y}~{maxLightRange}~{penumbraWidth}~{reverseLightDir}~{exposure}~{clampedDepth}";
             res = SaveState.SetCustomData(this, res);
             return SaveUtils.AppendUnrecognizedStringAttrs(res, "~", unrecognizedAttributes);
         }

@@ -12,5 +12,10 @@ namespace ShadedCanopy
         {
             public readonly static PlacedObject.Type DeadlyLight = new PlacedObject.Type("DeadlyLight", true);
         }
+
+        internal static class SlugStateName
+        {
+            public readonly static SlugcatStats.Name Shimmer = new SlugcatStats.Name("Shimmer", false);
+        }
     }
 }

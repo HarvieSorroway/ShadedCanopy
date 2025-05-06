@@ -10,8 +10,6 @@ namespace ShadedCanopy.ShimmerSlugcat
     public class ShimmerPlugin
     {
         public static Shader ShimmerSkin;
-        public static SlugcatStats.Name Shimmer = new SlugcatStats.Name("Shimmer", false);
-
 
         public static void LoadShimmerAsset(RainWorld rainWorld)
         {

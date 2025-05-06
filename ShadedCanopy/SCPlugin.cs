@@ -43,9 +43,11 @@ namespace ShadedCanopy
             FlashingEffectManager.Init();
             ShimmerSlugcat.ShimmerPlugin.LoadShimmerAsset(self);
             ScavengerHooks.HooksOn();
-            PlacedObjects.DevExtend.DevHooks.HooksOn();
+            PlacedObjects.SCPlacedObjects.Init();
 
-            Utils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");
+            SCUtils.SCUtils.Init();
+
+            SCUtils.SCHelperUtils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");
             inited = true;
         }
         

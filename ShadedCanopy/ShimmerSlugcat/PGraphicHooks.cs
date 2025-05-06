@@ -36,7 +36,7 @@ namespace ShadedCanopy.ShimmerSlugcat
             }
             orig(self, sLeaser, rCam, timeStacker, camPos);
 
-            if (self.player.slugcatStats.name == ShimmerPlugin.Shimmer)
+            if (self.player.slugcatStats.name == SCEnums.SlugStateName.Shimmer)
             {
                 for (int i = 0; i < 10; i++)
                 {
@@ -63,7 +63,7 @@ namespace ShadedCanopy.ShimmerSlugcat
         private static void PlayerGraphics_InitiateSprites(On.PlayerGraphics.orig_InitiateSprites orig, PlayerGraphics self, RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam)
         {
             orig(self, sLeaser, rCam);
-            if (self.owner is Player player && player.slugcatStats.name == ShimmerPlugin.Shimmer)
+            if (self.owner is Player player && player.slugcatStats.name == SCEnums.SlugStateName.Shimmer)
             {
                 FContainer fContainer = rCam.ReturnFContainer("GrabShaders");
                 for (int i = 0; i < sLeaser.sprites.Length; i++)

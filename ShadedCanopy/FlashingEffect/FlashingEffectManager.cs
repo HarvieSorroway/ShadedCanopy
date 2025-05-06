@@ -49,11 +49,14 @@ namespace ShadedCanopy.FlashingEffect
 
             Custom.rainWorld.Shaders.Add("DeadlyLight", FShader.CreateShader("SC_DeadlyLight", DeadlyLightShader));
             Custom.rainWorld.Shaders.Add("DeadlyLight_ForegroundGrab", FShader.CreateShader("DeadlyLight_ForegroundGrab", shadedcanopybundle.LoadAsset<Shader>("assets/myshader/foregroundgrab.shader")));
+
+            shadedcanopybundle.Unload(false);
+            UnityEngine.Object.Destroy(shadedcanopybundle);
         }
 
         public static void HooksOn()
         {
-            On.Player.Jump += Player_Jump;
+            //On.Player.Jump += Player_Jump;
             On.Room.NowViewed += Room_NowViewed;
         }
 

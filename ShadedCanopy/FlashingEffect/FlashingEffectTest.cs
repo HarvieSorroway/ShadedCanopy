@@ -5,6 +5,7 @@ using UnityEngine;
 using System.Text;
 using System.Threading.Tasks;
 using RWCustom;
+using SCUtils;
 
 namespace ShadedCanopy.FlashingEffect
 {
@@ -91,14 +92,14 @@ namespace ShadedCanopy.FlashingEffect
 
             if (smoothLife < preFlashTime)
             {
-                float stage_f = SCHelper.EaseInOutCubic((smoothLife - 0f) / preFlashTime);
+                float stage_f = SCHelperUtils.EaseInOutCubic((smoothLife - 0f) / preFlashTime);
                 sLeaser.sprites[0].scale = stage_f * 5f;
                 strenght_1 = 0.5f + 0.3f * stage_f;
                 grabWaveRad_1 = grabWaveStrength_1 = 0f;
             }
             else if (smoothLife < flashExpandTime_1)
             {
-                float stage_f = SCHelper.EaseInOutCubic((smoothLife - preFlashTime) / (flashExpandTime_1 - preFlashTime));
+                float stage_f = SCHelperUtils.EaseInOutCubic((smoothLife - preFlashTime) / (flashExpandTime_1 - preFlashTime));
                 sLeaser.sprites[0].scale = 5f + 45f * stage_f;
                 strenght_1 = 0.8f + 0.2f * stage_f;
                 grabWaveStrength_1 = stage_f;
@@ -106,7 +107,7 @@ namespace ShadedCanopy.FlashingEffect
             }
             else if(smoothLife < 0.6f)
             {
-                float stage_f = SCHelper.EaseInOutCubic((smoothLife - flashExpandTime_1) / (0.6f - flashExpandTime_1));
+                float stage_f = SCHelperUtils.EaseInOutCubic((smoothLife - flashExpandTime_1) / (0.6f - flashExpandTime_1));
                 sLeaser.sprites[0].scale = 50f - stage_f * 10f;
                 strenght_1 = 1.0f - stage_f;
                 grabWaveRad_1 = stage_f * 0.7f + 0.3f;
@@ -128,7 +129,7 @@ namespace ShadedCanopy.FlashingEffect
             }
             else if (smoothLife < flashExpandTime_2)
             {
-                float stage_f = SCHelper.EaseInOutCubic((smoothLife - preFlashTime) / (flashExpandTime_2 - preFlashTime));
+                float stage_f = SCHelperUtils.EaseInOutCubic((smoothLife - preFlashTime) / (flashExpandTime_2 - preFlashTime));
                 sLeaser.sprites[1].scale = 80f * stage_f;
                 strenght_2 = stage_f;
                 grabWaveRad_2 = stage_f * 0.3f;

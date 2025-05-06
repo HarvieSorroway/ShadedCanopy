@@ -25,7 +25,7 @@ namespace ShadedCanopy.PlacedObjects.DeadlyLight
         {
             this.room = room;
             this.placedObject = placedObject;
-            SCUtils.Utils.Log("Deadly Light ctor");
+            SCUtils.SCHelperUtils.Log("Deadly Light ctor");
 
             var param = GetMaskParam();
             mask = FlashingEffectManager.CreateMask(room, 20, param.Item1, param.Item2);

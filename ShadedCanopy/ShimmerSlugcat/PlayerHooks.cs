@@ -28,7 +28,7 @@ namespace ShadedCanopy.ShimmerSlugcat
         private static void Player_ctor(On.Player.orig_ctor orig, Player self, AbstractCreature abstractCreature, World world)
         {
             orig(self, abstractCreature, world);
-            if (self.slugcatStats.name == ShimmerPlugin.Shimmer)
+            if (self.slugcatStats.name == SCEnums.SlugStateName.Shimmer)
             {
                 shimmerPlayer.Add(self, new ShimmerPlayerModule());
             }

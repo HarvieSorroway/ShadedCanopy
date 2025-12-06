@@ -166,10 +166,10 @@ namespace ShadedCanopy.Creatures.Scavengers
                 c1.GotoNext(MoveType.After, (i) => i.MatchNewobj<WobblyBackTufts>());
                 c1.GotoNext(MoveType.After, (i) => i.MatchAdd());
                 c1.GotoNext(MoveType.After, (i) => i.MatchAdd());
-                c1.Index++;
+                c1.Index++;   // 位置：L48/IL025B this.ChestSprite = num++;之前
 
-                c1.Emit(OpCodes.Ldarg_0);
-                c1.Emit(OpCodes.Ldloc_1);
+                c1.Emit(OpCodes.Ldarg_0);  // arg0: this
+                c1.Emit(OpCodes.Ldloc_1);  // arg1: num
                 c1.EmitDelegate<Func<ScavengerGraphics, int, int>>((self, num) =>
                 {
                     if (self.subModules.Count(i => i is HardBackSpikes) == 0)
@@ -180,7 +180,7 @@ namespace ShadedCanopy.Creatures.Scavengers
                     }
                     return num;
                 });
-                c1.Emit(OpCodes.Stloc_1);
+                c1.Emit(OpCodes.Stloc_1);  // ret to num
             }
             catch (Exception ex)
             {

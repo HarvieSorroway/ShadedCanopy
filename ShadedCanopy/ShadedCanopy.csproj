@@ -4,6 +4,9 @@
     <OutputType>Library</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>$(DefineConstants);SC_SHOW_SHIMMER_ENERGY;SC_SHOW_VICTIM_CREATURE</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
@@ -26,6 +29,9 @@
     </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\includings\PUBLIC-Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="SlugBase">
+      <HintPath>..\includings\SlugBase.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Mathematics">
       <HintPath>..\includings\Unity.Mathematics.dll</HintPath>
@@ -52,4 +58,14 @@
   <ItemGroup>
     <ProjectReference Include="..\SCUtils\SCUtils.csproj" />
   </ItemGroup>
+  <Target Name="GenerateMod" AfterTargets="PostBuildEvent">
+    <ItemGroup>
+      <RemovePlugins Include="../mod/newest/plugins/$(TargetFileName)" />
+    </ItemGroup>
+    <ItemGroup>
+      <CopyPlugins Include="$(TargetPath)" />
+    </ItemGroup>
+    <Delete Files="@(RemovePlugins)" />
+    <Copy SourceFiles="@(CopyPlugins)" DestinationFolder="../mod/newest/plugins/" />
+  </Target>
 </Project>

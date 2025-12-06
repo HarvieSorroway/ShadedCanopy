@@ -47,7 +47,15 @@ namespace ShadedCanopy.ShimmerSlugcat
 
                     if (i < 9)
                     {
-                        sLeaser.sprites[i].color = Color.Lerp(self.player.ShortCutColor(), new Color(0.9f, 0.9f, 0.9f), module.lightUpProgress);
+                        Color bodyColor;
+                        if (SlugBase.DataTypes.PlayerColor.Body.GetColor(self.player.graphicsModule as PlayerGraphics) is Color outColor)
+                        {
+                            bodyColor = outColor;
+                        } else
+                        {
+                            bodyColor = self.player.ShortCutColor();
+                        }
+                        sLeaser.sprites[i].color = Color.Lerp(bodyColor, new Color(0.9f, 0.9f, 0.9f), module.lightUpProgress);
                         sLeaser.sprites[i].alpha = module.playerGrabbed ? 1f : 0.8f;
                     }
 

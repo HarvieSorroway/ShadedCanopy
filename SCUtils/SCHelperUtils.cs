@@ -27,6 +27,71 @@ namespace SCUtils
             File.AppendAllText(path, msg + "\n");
         }
 
+        public class CreatureFollowingLabel: CosmeticSprite  // 跟随生物的任意文本的测试用label
+        {
+            FLabel label;
+            Creature bindCreature;
+            public Vector2 posOffset;
+            public string text
+            {
+                get => label.text;
+                set => label.text = value;
+            }
+            public CreatureFollowingLabel(Creature creature, Vector2 ?posOffset=null)
+            {
+                this.room = creature.room;
+                this.bindCreature = creature;
+                this.label = new FLabel(Custom.GetFont(), "");
+                this.posOffset = posOffset.GetValueOrDefault();
+            }
+            public override void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam)
+            {
+                sLeaser.sprites = new FSprite[0];
+                this.label.RemoveFromContainer();
+                rCam.ReturnFContainer("HUD").AddChild(this.label);
+            }
+            public override void Update(bool eu)
+            {
+                base.Update(eu);
+                if (this.slatedForDeletetion)
+                    return;
+                if (this.label.container == null && this.room.game.cameras[0].room == this.room)
+                {
+                    this.room.game.cameras[0].ReturnFContainer("HUD").AddChild(this.label);
+                }
+                if (this.label.container != null && this.room.game.cameras[0].room != this.room)
+                {
+                    this.label.RemoveFromContainer();
+                }
+                if (this.bindCreature.slatedForDeletetion)
+                {
+                    Log("CreatureFollowingLabel: bindCreature slatedForDeletion, destroying label");
+                    Destroy();
+                    return;
+                }
+                if (this.bindCreature.room != this.room)
+                {
+                    this.Destroy();
+                }
+                this.pos = this.bindCreature.firstChunk.pos;
+                this.lastPos = this.bindCreature.firstChunk.lastPos;
+            }
+            public override void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
+            {
+                if (this.slatedForDeletetion)
+                    return;
+                Vector2 viewPos = Vector2.Lerp(lastPos, pos, timeStacker) - camPos + posOffset;
+                label.x = viewPos.x;
+                label.y = viewPos.y;
+            }
+            public override void Destroy()
+            {
+                base.Destroy();
+                this.label.RemoveFromContainer();
+                this.label = null;
+            }
+        }
+        
         internal class IDLabel : CosmeticSprite
         {
             FLabel label;

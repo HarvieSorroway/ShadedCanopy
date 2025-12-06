@@ -1,4 +1,6 @@
 ﻿using BepInEx;
+using BepInEx.Logging;
+using SCUtils;
 using ShadedCanopy.Creatures.Scavengers;
 using ShadedCanopy.FlashingEffect;
 using System;
@@ -7,8 +9,6 @@ using System.Linq;
 using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
-using System.Security.Permissions;
-using SCUtils;
 
 
 #pragma warning disable CS0618
@@ -21,12 +21,18 @@ namespace ShadedCanopy
     [BepInPlugin(ModID, ModName, ModVersion)]
     public class SCPlugin : BaseUnityPlugin
     {
+        new internal static ManualLogSource Logger;
+
         public const string ModID = "shaded_canopy";
         public const string ModName = "Shaded Canopy";
         public const string ModVersion = "0.0.1";
 
         private bool inited;
 
+        public SCPlugin()
+        {
+            Logger = base.Logger;
+        }
         public void OnEnable()
         {
             On.RainWorld.OnModsInit += RainWorld_OnModsInit;

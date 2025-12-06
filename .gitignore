@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 
 includings/
+/mod/newest/plugins/

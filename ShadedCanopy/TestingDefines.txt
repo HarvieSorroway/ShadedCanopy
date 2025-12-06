@@ -1,0 +1,6 @@
+与测试有关的宏
+
+SC_SHOW_SHIMMER_ENERGY		:		在玩家kym身上显示当前能量以及发光开关
+	涉及源文件：ShimmerSlugcat\PlayerHooks.cs
+SC_SHOW_VICTIM_CREATURE		:		在被玩家爆闪的生物上显示标记以及信息
+	涉及源文件：ShimmerSlugcat\PlayerHooks.cs

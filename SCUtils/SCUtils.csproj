@@ -24,4 +24,14 @@
       <HintPath>..\includings\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <Target Name="GenerateMod" AfterTargets="PostBuildEvent">
+    <ItemGroup>
+      <RemovePlugins Include="../mod/newest/plugins/$(TargetFileName)" />
+    </ItemGroup>
+    <ItemGroup>
+      <CopyPlugins Include="$(TargetPath)" />
+    </ItemGroup>
+    <Delete Files="@(RemovePlugins)" />
+    <Copy SourceFiles="@(CopyPlugins)" DestinationFolder="../mod/newest/plugins/" />
+  </Target>
 </Project>

@@ -23,7 +23,51 @@ namespace ShadedCanopy.ShimmerSlugcat
             On.Player.Update += Player_Update;
             On.Player.BiteEdibleObject += Player_BiteEdibleObject;
             On.Room.Update += Room_Update;
+#if SC_SHOW_VICTIM_CREATURE
+            On.Creature.Update += SSVC_Creature_Update;
+            On.Creature.NewRoom += SSVC_Creature_NewRoom;
+#endif
+#if SC_SHOW_SHIMMER_ENERGY
+            On.Player.NewRoom += SSSE_Player_NewRoom;
+#endif
         }
+
+#if SC_SHOW_SHIMMER_ENERGY
+        private static void SSSE_Player_NewRoom(On.Player.orig_NewRoom orig, Player self, Room newRoom)
+        {
+            orig.Invoke(self, newRoom);
+            if (shimmerPlayer.TryGetValue(self, out var module))
+            {
+                if (module.energyLabel != null && module.energyLabel.room != newRoom)
+                {
+                    module.energyLabel = new SCUtils.SCHelperUtils.CreatureFollowingLabel(self, module.energyLabel.posOffset);
+                    newRoom.AddObject(module.energyLabel);
+                }
+            }
+        }
+#endif
+
+
+#if SC_SHOW_VICTIM_CREATURE
+        private static void SSVC_Creature_Update(On.Creature.orig_Update orig, Creature self, bool eu)
+        {
+            orig.Invoke(self, eu);
+            if (flashedVictim.TryGetValue(self.abstractCreature, out var module))
+            {
+                if (module.victimInfo != null)
+                    module.victimInfo.text = $"Blind: {self.blind} Panic:{module.panic}/{module.maxPanic} (AP:{(module.alreadyPanic?'Y':'N')})";
+            }
+        }
+        private static void SSVC_Creature_NewRoom(On.Creature.orig_NewRoom orig, Creature self, Room newRoom)
+        {
+            orig.Invoke(self, newRoom);
+            if (flashedVictim.TryGetValue(self.abstractCreature, out var module))
+            {
+                module.victimInfo = new SCUtils.SCHelperUtils.CreatureFollowingLabel(self, module.victimInfo.posOffset);
+                newRoom.AddObject(module.victimInfo);
+            }
+        }
+#endif
 
         private static void Player_ctor(On.Player.orig_ctor orig, Player self, AbstractCreature abstractCreature, World world)
         {
@@ -129,6 +173,17 @@ namespace ShadedCanopy.ShimmerSlugcat
                     module.energy = ShimmerPlayerModule.maxEnergy;
                 }
 
+#if SC_SHOW_SHIMMER_ENERGY
+                if (module.energyLabel == null)
+                {
+                    module.energyLabel = new SCUtils.SCHelperUtils.CreatureFollowingLabel(self, new Vector2(0, 40f));
+                    if (self.room != null)
+                    {
+                        self.room.AddObject(module.energyLabel);
+                    }
+                }
+                module.energyLabel.text = $"MP:{module.energy}/{ShimmerPlayerModule.maxEnergy} (L:{(module.lightUp?'O':'F')})";
+#endif
             }
         }
 
@@ -229,7 +284,7 @@ namespace ShadedCanopy.ShimmerSlugcat
                 {
                     if (self.grasps[i] != null && self.grasps[i].grabbed is IPlayerEdible && (self.grasps[i].grabbed as IPlayerEdible).Edible)
                     {
-                        module.energy = Mathf.Min(ShimmerPlayerModule.maxEnergy, EnergyFromFood(self.grasps[i].grabbed.abstractPhysicalObject.type));
+                        module.energy = Mathf.Min(ShimmerPlayerModule.maxEnergy, module.energy + EnergyFromFood(self.grasps[i].grabbed.abstractPhysicalObject.type));
                         break;
                     }
                 }
@@ -288,9 +343,10 @@ namespace ShadedCanopy.ShimmerSlugcat
                 if (self.room.abstractRoom.creatures[i].state.alive && self.room.abstractRoom.creatures[i].realizedCreature != null)
                 {
                     Creature creature = self.room.abstractRoom.creatures[i].realizedCreature;
-                    if (self.room.ViewedByAnyCamera(creature.firstChunk.pos, 0f)
-                        || Custom.DistNoSqrt(self.DangerPos, creature.firstChunk.pos) <= Mathf.Pow(ShimmerPlayerModule.flashRangeForOffScreen, 2f)
-                        || CanBeFlashed(creature.Template.type))
+                    if ((
+                            self.room.ViewedByAnyCamera(creature.firstChunk.pos, 0f) ||
+                            Custom.DistNoSqrt(self.DangerPos, creature.firstChunk.pos) <= Mathf.Pow(ShimmerPlayerModule.flashRangeForOffScreen, 2f)
+                        ) && CanBeFlashed(creature.Template.type))
                     {
                         if (!flashedVictim.TryGetValue(creature.abstractCreature, out var module))
                         {
@@ -360,6 +416,8 @@ namespace ShadedCanopy.ShimmerSlugcat
 
         public static bool CanBeFlashed(CreatureTemplate.Type type)
         {
+            if (type == CreatureTemplate.Type.Slugcat)
+                return false;
             if (type.value.Contains("LongLegs") || type == CreatureTemplate.Type.BlackLizard)
             {
                 return false;
@@ -371,15 +429,22 @@ namespace ShadedCanopy.ShimmerSlugcat
         {
             public static float maxEnergy = 300f;
             public static float flashRangeForOffScreen = 600f;
+
             public float energy = maxEnergy;
             public float lightUpProgress;
             public float pressPickupCount;
             public bool lightUp;
             public bool playerGrabbed;
             public LightSource lightSource;
+
+#if SC_SHOW_SHIMMER_ENERGY
+            public SCUtils.SCHelperUtils.CreatureFollowingLabel energyLabel = null;
+#endif
             public ShimmerPlayerModule()
             {
-
+                lightUp = false;
+                playerGrabbed = false;
+                pressPickupCount = 0;
             }
         }
 
@@ -392,12 +457,20 @@ namespace ShadedCanopy.ShimmerSlugcat
             public bool alreadyPanic;
             public ThreatTracker.ThreatPoint panicPoint;
 
+#if SC_SHOW_VICTIM_CREATURE
+            public SCUtils.SCHelperUtils.CreatureFollowingLabel victimInfo;
+#endif
+
             public FlashedVictim(AbstractCreature abstractCreature, Vector2 panicSource, float panic = 280f)
             {
                 victim = abstractCreature;
                 this.panic = panic;
                 this.maxPanic = panic;
                 this.panicSourcePos = panicSource;
+#if SC_SHOW_VICTIM_CREATURE
+                victimInfo = new SCUtils.SCHelperUtils.CreatureFollowingLabel(abstractCreature.realizedCreature, new Vector2(0, 60f));
+                abstractCreature.realizedCreature.room.AddObject(victimInfo);
+#endif
             }
         }
     }

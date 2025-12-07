@@ -130,7 +130,15 @@ namespace ShadedCanopy.ShimmerSlugcat
                     if (self.input[1].spec && !self.input[0].spec)
                     {
                         //爆闪
-                        if (self.input[0].pckp)
+                        // 放宽判定，只要向前【5】帧内(0.25s)如果有在松开spec前摁下过pckg，就视为使用爆闪
+                        bool isFlash = self.input[0].pckp;
+                        for (int i = 1; i <= 5; ++i)
+                        {
+                            if (!self.input[i].spec)
+                                break;
+                            isFlash |= self.input[i].pckp;
+                        }
+                        if (isFlash)
                         {
                             if (module.energy >= ShimmerPlayerModule.maxEnergy)
                             {

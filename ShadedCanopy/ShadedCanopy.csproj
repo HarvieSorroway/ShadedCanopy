@@ -4,6 +4,9 @@
     <OutputType>Library</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 	<LangVersion>9.0</LangVersion>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>$(DefineConstants);SC_SHOW_SHIMMER_ENERGY;SC_SHOW_VICTIM_CREATURE</DefineConstants>
@@ -11,6 +14,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.0" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp-firstpass">
@@ -25,6 +29,9 @@
     <Reference Include="HOOKS-Assembly-CSharp">
       <HintPath>..\includings\HOOKS-Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="ImGui.NET">
+      <HintPath>..\includings\ImGui.NET.dll</HintPath>
+    </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>..\includings\Mono.Cecil.dll</HintPath>
     </Reference>
@@ -33,6 +40,9 @@
     </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\includings\PUBLIC-Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="rain-world-imgui-api">
+      <HintPath>..\includings\rain-world-imgui-api.dll</HintPath>
     </Reference>
     <Reference Include="SlugBase">
       <HintPath>..\includings\SlugBase.dll</HintPath>
@@ -61,6 +71,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SCUtils\SCUtils.csproj" />
+    <ProjectReference Include="..\ShadedCanopy.Gen\ShadedCanopy.Gen\ShadedCanopy.Gen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
   </ItemGroup>
   <Target Name="GenerateMod" AfterTargets="PostBuildEvent">
     <ItemGroup>

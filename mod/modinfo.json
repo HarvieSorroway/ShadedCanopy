@@ -3,5 +3,6 @@
 	"name": "Shaded Canopy",
 	"version": "0.0.1",
 	"authors": "Wawa",
-	"description": "A Slugcat from ShadowSphere."
+	"description": "A Slugcat from ShadowSphere.",
+	"priorities": ["rwimgui"]
 }

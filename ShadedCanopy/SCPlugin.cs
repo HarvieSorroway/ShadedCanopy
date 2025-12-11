@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Security.Permissions;
 using SCUtils;
 using ShadedCanopy.Creatures;
+using ShadedCanopy.Imgui;
 
 
 #pragma warning disable CS0618
@@ -55,9 +56,8 @@ namespace ShadedCanopy
             ScavengerHooks.HooksOn();
             PlacedObjects.SCPlacedObjects.Init();
             
-
-
             SCUtils.SCUtils.Init();
+            ImguiRegister.TryInit();
 
             SCUtils.SCHelperUtils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");
             inited = true;

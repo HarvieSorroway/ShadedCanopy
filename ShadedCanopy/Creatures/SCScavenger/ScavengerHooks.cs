@@ -31,6 +31,7 @@ namespace ShadedCanopy.Creatures.Scavengers
             On.Scavenger.ctor += Scavenger_ctor;
 
             On.ScavengerGraphics.Eartlers.GenerateSegments += Eartlers_GenerateSegments;
+
         }
 
         private static void Eartlers_GenerateSegments(On.ScavengerGraphics.Eartlers.orig_GenerateSegments orig, ScavengerGraphics.Eartlers self)
@@ -39,125 +40,24 @@ namespace ShadedCanopy.Creatures.Scavengers
             List<Vertex> segment = new List<Vertex>();
 
 
-            //float angle = 110f;
+            //第一类
+            var basePos = new float2(0.5f, 0f);
+            segment.Add(new Vertex(basePos, 1f));
+            segment.Add(new Vertex(basePos + Custom.DegToFloat2(Mathf.Lerp(40f, 90f, Random.value)) * 0.4f , 1f));
+            segment.Add(new Vertex(segment.Last().pos + Custom.DegToFloat2(Mathf.Lerp(30f, 60f, Random.value)) * Mathf.Lerp(0.8f, 1.2f, Random.value), 0.5f + 1f * Random.value));
 
-            //for(int i = 0;i < 4; i++)
-            //{
-            //    segment.Clear();
-            //    float2 vertical = new float2(0.15f, -0.2f + i * 0.15f);
-            //    segment.Add(new Vertex( vertical, 1.5f));//原点
-            //    segment.Add(new Vertex(Custom.DegToFloat2(angle - i * 20) * (0.75f + i * 0.05f) + vertical, 1f));
-            //    segment.Add(new Vertex(Custom.DegToFloat2(angle - i * 20 - 40f) * (0.05f + 0.05f * i) + vertical + segment.Last().pos, 0f));
-            //    self.DefineBranch(segment);
-            //}
-
-            float angle = 90f;
-            float length = 0.3f;
-            float rad = 1f;
-
-            segment.Add(new Vertex(new float2(0.15f, -0.2f), 1.5f));//原点
-            for (int i = 0; i < 5; i++)
-            {
-                float2 posLast = segment.Last().pos;
-                segment.Add(new Vertex(Custom.DegToFloat2(angle) * length + posLast, rad));
-
-                rad *= 0.95f;
-                length *= 0.95f;
-                angle -= 40f;
-            }
-            self.DefineBranch(segment);
-
-
-            return;
-            bool elite = self.owner.scavenger.Elite;
-            float num = (elite ? 1.75f : 1f);
-            float2 angleLim = new float2(elite ? 45f : 15f, elite ? 90f : 45f);
-
-            float width1 = (elite ? 1.5f : 1f);
-            float rad1 = (elite ? 2f : 1f);
-            float num4 = (elite ? 1f : 1f);
-            float num5 = (elite ? 0f : 1f);
-            float num6 = (elite ? 2f : 1f);
-            float num7 = (elite ? 0f : 1f);
-
-            self.points = new List<Vertex[]>();
-            segment = new List<Vertex>();
-            segment.Clear();
-
-            //第一节
-            segment.Add(new Vertex(new float2(0f, 0f), 1f));//原点
-            segment.Add(new Vertex(Custom.DegToFloat2(Mathf.Lerp(40f, 90f, Random.value)) * 0.4f * width1, 1f * rad1));
-            float2 point1 = Custom.DegToFloat2(Mathf.Lerp(angleLim.x, angleLim.y, Random.value) * num);
-            float2 point2 = point1 - Custom.DegToFloat2(Mathf.Lerp(40f, 90f, Random.value)) * 0.4f * width1;
-            if (point2.x < 0.2f)
-            {
-                point2 = new float2(Mathf.Lerp(point2.x, point1.x, 0.4f), point2.y);
-            }
-            segment.Add(new Vertex(point2, 1.5f * num4));
-            segment.Add(new Vertex(point1, 2f * num5));
-            self.DefineBranch(segment);
-            segment.Clear();
-
-            //第二节
-            segment.Add(new Vertex(self.points[0][1].pos, 1f));
-            int num8 = (((double)math.distance(self.points[0][1].pos, self.points[0][2].pos) > 0.6 && Random.value < 0.5f) ? 2 : 1);
-            float2 float4 = math.lerp(self.points[0][1].pos, self.points[0][2].pos, Mathf.Lerp(0f, (num8 == 1) ? 0.7f : 0.25f, Random.value));
-            segment.Add(new Vertex(float4, 1.2f));
-            segment.Add(new Vertex(float4 + self.points[0][3].pos - self.points[0][2].pos + Custom.DegToFloat2(Random.value * 360f) * 0.1f, 1.75f));
-            self.DefineBranch(segment);
-            if (num8 == 2)
-            {
-                segment.Clear();
-                float4 = math.lerp(self.points[0][1].pos, self.points[0][2].pos, Mathf.Lerp(0.45f, 0.7f, Random.value));
-                segment.Add(new Vertex(float4, 1.2f));
-                segment.Add(new Vertex(float4 + self.points[0][3].pos - self.points[0][2].pos + Custom.DegToFloat2(Random.value * 360f) * 0.1f, 1.75f));
-                self.DefineBranch(segment);
-            }
-            bool flag = Random.value < 0.5f && !elite;
-            if (flag)
-            {
-                segment.Clear();
-                float2 float5 = Custom.DegToFloat2(90f + Mathf.Lerp(-20f, 20f, Random.value)) * Mathf.Lerp(0.2f, 0.5f, Random.value);
-                if (float5.y > self.points[0][1].pos.y - 0.1f)
-                {
-                    float5 = new float2(float5.x, float5.y - 0.2f);
-                }
-                float num9 = Mathf.Lerp(0.8f, 2f, Random.value);
-                if (Random.value < 0.5f)
-                {
-                    float5 += Custom.DegToFloat2(Mathf.Lerp(120f, 170f, Random.value)) * Mathf.Lerp(0.1f, 0.3f, Random.value);
-                    segment.Add(new Vertex(new float2(0f, 0f), num9));
-                    segment.Add(new Vertex(float5, num9));
-                }
-                else
-                {
-                    segment.Add(new Vertex(new float2(0f, 0f), 1f));
-                    segment.Add(new Vertex(float5, (1f + num9) / 2f));
-                    segment.Add(new Vertex(float5 + Custom.DegToFloat2(Mathf.Lerp(95f, 170f, Random.value)) * Mathf.Lerp(0.1f, 0.2f, Random.value), num9));
-                }
-                self.DefineBranch(segment);
-            }
-            if (Random.value > 0.25f || !flag || elite)
-            {
-                segment.Clear();
-                float num10 = 1f + Random.value * 1.5f;
-                bool flag2 = Random.value < 0.5f;
-                segment.Add(new Vertex(new float2(0f, 0f), 1f));
-                float num11 = Mathf.Lerp(95f, 135f, Random.value);
-                float num12 = Mathf.Lerp(0.25f, 0.4f, Random.value) * num6;
-                segment.Add(new Vertex(Custom.DegToFloat2(num11) * num12, (flag2 ? 0.8f : Mathf.Lerp(1f, num10, 0.3f)) * num6));
-                segment.Add(new Vertex(Custom.DegToFloat2(num11 + Mathf.Lerp(5f, 35f, Random.value)) * Mathf.Max(num12 + 0.1f, Mathf.Lerp(0.3f, 0.6f, Random.value)), flag2 ? 0.8f : Mathf.Lerp(1f, num10, 0.6f)));
-                segment.Add(new Vertex(segment[segment.Count - 1].pos.normalized() * (segment[segment.Count - 1].pos.magnitude() + Mathf.Lerp(0.15f, 0.25f, Random.value) * num6), num10 * num7));
-                self.DefineBranch(segment);
-            }
         }
 
         private static void Scavenger_ctor(On.Scavenger.orig_ctor orig, Scavenger self, AbstractCreature abstractCreature, World world)
         {
             orig.Invoke(self, abstractCreature, world);
+            if (!self.IsSCScav())
+                return;
             SCScavExtra.TryGetSCScav(self, true);
         }
 
+
+        //添加背毛
         private static void ScavengerGraphics_ctor(MonoMod.Cil.ILContext il)
         {
             ILCursor c1 = new ILCursor(il);
@@ -174,9 +74,12 @@ namespace ShadedCanopy.Creatures.Scavengers
                 {
                     if (self.subModules.Count(i => i is HardBackSpikes) == 0)
                     {
-                        var spike = new SCHardBackTufts(self, num);
-                        self.subModules.Add(spike);
-                        num += spike.totalSprites;
+                        if(self.scavenger.IsSCScav())
+                        {
+                            var spike = new SCHardBackTufts(self, num);
+                            self.subModules.Add(spike);
+                            num += spike.totalSprites;
+                        }
                     }
                     return num;
                 });
@@ -188,9 +91,12 @@ namespace ShadedCanopy.Creatures.Scavengers
             }
         }
 
+        //手臂颜色修改
         private static void ScavengerGraphics_ApplyPalette(On.ScavengerGraphics.orig_ApplyPalette orig, ScavengerGraphics self, RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, RoomPalette palette)
         {
             orig.Invoke(self, sLeaser, rCam, palette);
+            if (!self.scavenger.IsSCScav())
+                return;
             var extra = SCScavExtra.TryGetSCScav(self.scavenger);
             if(extra.decorationColoredHands > 0f)
             {
@@ -215,7 +121,7 @@ namespace ShadedCanopy.Creatures.Scavengers
             }
         }
 
-
+        //初始化外观额外参数
         private static void IndividualVariations_ctor(On.ScavengerGraphics.IndividualVariations.orig_ctor orig, ref ScavengerGraphics.IndividualVariations self, Scavenger scavenger)
         {
             orig.Invoke(ref self, scavenger);
@@ -226,10 +132,15 @@ namespace ShadedCanopy.Creatures.Scavengers
             extra.InitGraphicsIndividualParam();
         }
 
-        /// <summary>重新生成拾荒的配色 </summary>
+        //重新生成拾荒的配色
         private static void ScavengerGraphics_GenerateColors(On.ScavengerGraphics.orig_GenerateColors orig, ScavengerGraphics self)
         {
             //self.scavenger.room.AddObject(new IDLabel(self.scavenger.room, self.scavenger));
+            if (!self.scavenger.IsSCScav())
+            {
+                orig.Invoke(self);
+                return;
+            }
 
             Personality personality = self.scavenger.abstractCreature.personality;
 

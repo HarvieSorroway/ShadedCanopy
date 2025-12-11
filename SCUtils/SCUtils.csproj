@@ -34,4 +34,7 @@
     <Delete Files="@(RemovePlugins)" />
     <Copy SourceFiles="@(CopyPlugins)" DestinationFolder="../mod/newest/plugins/" />
   </Target>
+  <ItemGroup>
+    <Folder Include="SCDevUI\AttributeScanenr\" />
+  </ItemGroup>
 </Project>

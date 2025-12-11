@@ -75,7 +75,7 @@ namespace ShadedCanopy.PlacedObjects.DeadlyLight
         {
             if (newContatiner == null)
             {
-                newContatiner = rCam.ReturnFContainer("GrabShaders");
+                newContatiner = rCam.ReturnFContainer("Water");
             }
 
             sLeaser.sprites[0].RemoveFromContainer();
@@ -86,6 +86,19 @@ namespace ShadedCanopy.PlacedObjects.DeadlyLight
                 var fSprite = sLeaser.sprites[i];
                 fSprite.RemoveFromContainer();
                 newContatiner.AddChild(fSprite);
+            }
+            if(room.waterObject != null)
+            {
+                foreach(var leaser in rCam.spriteLeasers)
+                {
+                    if(leaser.drawableObject == room.waterObject)
+                    {
+                        for(int i =0;i < leaser.sprites.Length; i++)
+                        {
+                            leaser.sprites[i].MoveToFront();
+                        }
+                    }
+                }
             }
         }
 

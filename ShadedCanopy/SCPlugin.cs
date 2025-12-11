@@ -9,6 +9,9 @@ using System.Linq;
 using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
+using System.Security.Permissions;
+using SCUtils;
+using ShadedCanopy.Creatures;
 
 
 #pragma warning disable CS0618
@@ -36,6 +39,7 @@ namespace ShadedCanopy
         public void OnEnable()
         {
             On.RainWorld.OnModsInit += RainWorld_OnModsInit;
+            SCCritobs.Init();
         }
 
         private void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
@@ -50,6 +54,8 @@ namespace ShadedCanopy
             ShimmerSlugcat.ShimmerPlugin.LoadShimmerAsset(self);
             ScavengerHooks.HooksOn();
             PlacedObjects.SCPlacedObjects.Init();
+            
+
 
             SCUtils.SCUtils.Init();
 

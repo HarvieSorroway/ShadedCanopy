@@ -1,6 +1,6 @@
-сК╡Бйтсп╧ь╣д╨Й
+О╩©Д╦▌Ф╣▀Х╞∙Ф°┴Е┘ЁГ └Е╝▐
 
-SC_SHOW_SHIMMER_ENERGY		:		тзмФ╪рkymиМиоотй╬╣╠г╟дэа©рт╪╟╥╒╧Б©╙╧ь
-	иФ╪╟т╢нд╪Чё╨ShimmerSlugcat\PlayerHooks.cs
-SC_SHOW_VICTIM_CREATURE		:		тз╠╩мФ╪р╠╛иа╣диЗнОиоотй╬╠Й╪грт╪╟пео╒
-	иФ╪╟т╢нд╪Чё╨ShimmerSlugcat\PlayerHooks.cs
+SC_SHOW_SHIMMER_ENERGY		:		Е°╗Г▌╘Е╝╤kymХ╨╚Д╦┼Ф≤╬Г╓╨Е╫⌠Е┴█Х┐╫И┤▐Д╩╔Е▐┼Е▐▒Е┘┴Е╪─Е┘Ё
+	Ф╤┴Е▐┼Ф╨░Ф√┤Д╩╤О╪ ShimmerSlugcat\PlayerHooks.cs
+SC_SHOW_VICTIM_CREATURE		:		Е°╗Х╒╚Г▌╘Е╝╤Г┬├И≈╙Г └Г■÷Г┴╘Д╦┼Ф≤╬Г╓╨Ф═┤Х╝╟Д╩╔Е▐┼Д©║Ф│╞
+	Ф╤┴Е▐┼Ф╨░Ф√┤Д╩╤О╪ ShimmerSlugcat\PlayerHooks.cs

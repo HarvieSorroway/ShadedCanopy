@@ -24,4 +24,7 @@
       <HintPath>..\includings\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="SCDevUI\AttributeScanenr\" />
+  </ItemGroup>
 </Project>

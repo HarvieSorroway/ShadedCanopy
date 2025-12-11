@@ -34,9 +34,21 @@ namespace ShadedCanopy.ShimmerSlugcat
             }
         }
 
+
+        static bool lastMouse;
         private static void Player_Update(On.Player.orig_Update orig, Player self, bool eu)
         {
             orig(self, eu);
+
+            bool mouse = Input.GetMouseButton(0);
+            if(Input.GetKey(KeyCode.LeftShift) && (mouse && !lastMouse))
+            {
+                var ab = new AbstractCreature(self.abstractCreature.world, StaticWorld.GetCreatureTemplate(SCEnums.CreatureTemplateType.SCScavenger), null, self.abstractCreature.pos, self.room.game.GetNewID());
+                self.abstractCreature.Room.AddEntity(ab);
+                ab.RealizeInRoom();
+            }
+            lastMouse = mouse;
+
             if (shimmerPlayer.TryGetValue(self, out var module))
             {
                 module.playerGrabbed = GrabbedCondition(self);

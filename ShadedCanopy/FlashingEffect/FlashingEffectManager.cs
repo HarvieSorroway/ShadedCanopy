@@ -1,17 +1,12 @@
-﻿
-using Expedition;
+﻿using Expedition;
 using MoreSlugcats;
 using RWCustom;
 using ShadedCanopy.Effect.SCSuperStructureEffect;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using Watcher;
-using static ShadedCanopy.FlashingEffect.FlashingEffectManager;
 
 namespace ShadedCanopy.FlashingEffect
 {
@@ -30,6 +25,8 @@ namespace ShadedCanopy.FlashingEffect
         {
             HooksOn();
             LoadAssets();
+            ForeObjectMask.ForeObjectMaskHooks.HooksOn();
+            RoomTileChangeHooks();
         }
 
         public static void LoadAssets()
@@ -56,7 +53,7 @@ namespace ShadedCanopy.FlashingEffect
 
         public static void HooksOn()
         {
-            //On.Player.Jump += Player_Jump;
+            On.Player.Jump += Player_Jump;
             On.Room.NowViewed += Room_NowViewed;
         }
 
@@ -279,6 +276,35 @@ namespace ShadedCanopy.FlashingEffect
             return geometryTex;
         }
 
+        public static void UpdateLevelGeometryTex(Room room)
+        {
+            Texture2D geometryTex;
+            bool firstInit = false;
+            if (!roomGeometryTexs.ContainsKey(room.abstractRoom.name))
+            {
+                firstInit = true;
+            }
+
+            geometryTex = TryLoadLevelGeometryTex(room);
+            if (firstInit)
+                return;
+
+
+            for (int x = 0; x < room.Width; x++)
+            {
+                for (int y = 0; y < room.Height; y++)
+                {
+                    if (room.GetTile(x, y).Solid)
+                        geometryTex.SetPixel(x, y, Color.red);
+                    else if (room.GetTile(x, y).Terrain == Room.Tile.TerrainType.Slope)
+                        geometryTex.SetPixel(x, y, Color.green);
+                    else
+                        geometryTex.SetPixel(x, y, Color.black);
+                }
+            }
+            geometryTex.Apply();
+        }
+
         /// <summary> 创建LevelMask的RT，并自动应用一次计算 </summary>
         /// <param name="room"></param>
         /// <param name="lightSourceRoomPos"></param>
@@ -457,6 +483,20 @@ namespace ShadedCanopy.FlashingEffect
             {
                 used = false;
             }
+        }
+    }
+
+    internal static partial class FlashingEffectManager
+    {
+        public static void RoomTileChangeHooks()
+        {
+            On.RegionGate.ChangeDoorStatus += RegionGate_ChangeDoorStatus;
+        }
+
+        private static void RegionGate_ChangeDoorStatus(On.RegionGate.orig_ChangeDoorStatus orig, RegionGate self, int door, bool open)
+        {
+            orig.Invoke(self, door, open);
+            UpdateLevelGeometryTex(self.room);
         }
     }
 }

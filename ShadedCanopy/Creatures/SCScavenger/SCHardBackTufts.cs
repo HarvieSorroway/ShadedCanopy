@@ -121,13 +121,6 @@ namespace ShadedCanopy.Creatures.Scavengers
                 sprite.verticeColors[1] = light;
                 sprite.verticeColors[2] = light;
                 sprite.verticeColors[3] = dark;
-
-
-
-                //sLeaser.sprites[index].rotation = Custom.VecToDeg(dir.normalized);
-                //sLeaser.sprites[index].x = pos.x - camPos.x;
-                //sLeaser.sprites[index].y = pos.y - camPos.y;
-                //sLeaser.sprites[index].scaleX = Mathf.Sign(Mathf.Lerp(scavGrphs.lastFlip, scavGrphs.flip, timeStacker) + positions[i].x * 0.5f) * Mathf.Lerp(0.5f * num, 1f * num, generalSize) * xFlip;
             }
         }
     }

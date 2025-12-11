@@ -45,4 +45,12 @@ namespace ShadedCanopy.Creatures.Scavengers
                 decorationColoredHands = Random.value * 0.5f + 0.3f;
         }
     }
+
+    public static class SCScavExt
+    {
+        public static bool IsSCScav(this Scavenger scavenger)
+        {
+            return scavenger.abstractCreature.creatureTemplate.type == SCEnums.CreatureTemplateType.SCScavenger;
+        }
+    }
 }

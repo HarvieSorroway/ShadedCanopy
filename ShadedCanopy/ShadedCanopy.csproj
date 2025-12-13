@@ -71,7 +71,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SCUtils\SCUtils.csproj" />
-    <ProjectReference Include="..\ShadedCanopy.Gen\ShadedCanopy.Gen\ShadedCanopy.Gen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    <ProjectReference Include="..\ShadedCanopy.Gen\ShadedCanopy.Gen\ShadedCanopy.Gen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <Target Name="GenerateMod" AfterTargets="PostBuildEvent">
     <ItemGroup>

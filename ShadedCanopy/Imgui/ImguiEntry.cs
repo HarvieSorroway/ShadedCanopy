@@ -27,7 +27,7 @@ namespace ShadedCanopy.Imgui
             // 将值赋给 DebugArguments
             // 生成器会生成只读属性
             DebugArguments.Title = "Debug Arguments"; // 实例 只读显示
-            DebugArguments.Test = new List<string>{"A", "B"};// 实例 只读显示
+            DebugArguments.Test = new List<string> { "A", "B" };// 实例 只读显示
 
             // 直接写这行代码，IDE 可能会暂时报错说 TestInput 不存在
             // 生成器运行后，会自动生成 public static float TestInput { get; set; }
@@ -38,15 +38,15 @@ namespace ShadedCanopy.Imgui
     internal static class ImguiEntry
     {
         [CanBeNull] public static IMGUIContext LastContext;
-        
-        
+
+
         public static unsafe void Init()
         {
             typeof(ImGUIAPI).Module.GetType("RWIMGUI.Core.InitializationManager", true)
                 .GetMethod("InitializeAll", BindingFlags.Static | BindingFlags.Public)!.Invoke(null, Array.Empty<object>());
             ImGUIAPI.AddMenuCallback(&DebugEditorPresent);
         }
-    
+
         public static void DebugEditorPresent(ref IntPtr swapChain, ref uint sync, ref uint flags)
         {
             if (ImGui.BeginTabItem("Stupid Mouse"))
@@ -56,7 +56,7 @@ namespace ShadedCanopy.Imgui
                     LastContext = ImGUIAPI.CurrentContext;
                     ImGUIAPI.SwitchContext(new DebugArgumentContext());
                 }
-                ImGui.EndTabItem(); 
+                ImGui.EndTabItem();
             }
         }
     }

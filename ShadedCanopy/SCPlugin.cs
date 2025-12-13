@@ -57,7 +57,7 @@ namespace ShadedCanopy
             PlacedObjects.SCPlacedObjects.Init();
             
             SCUtils.SCUtils.Init();
-            ImguiRegister.TryInit();
+            //ImguiRegister.TryInit();
 
             SCUtils.SCHelperUtils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");
             inited = true;

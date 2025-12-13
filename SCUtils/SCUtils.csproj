@@ -17,6 +17,12 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>..\includings\PUBLIC-Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="ImGui.NET">
+      <HintPath>..\includings\ImGui.NET.dll</HintPath>
+    </Reference>
+    <Reference Include="rain-world-imgui-api">
+      <HintPath>..\includings\rain-world-imgui-api.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\includings\UnityEngine.dll</HintPath>
     </Reference>
@@ -34,7 +40,4 @@
     <Delete Files="@(RemovePlugins)" />
     <Copy SourceFiles="@(CopyPlugins)" DestinationFolder="../mod/newest/plugins/" />
   </Target>
-  <ItemGroup>
-    <Folder Include="SCDevUI\AttributeScanenr\" />
-  </ItemGroup>
 </Project>

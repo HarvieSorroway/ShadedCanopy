@@ -10,7 +10,7 @@ namespace ShadedCanopy.ShimmerSlugcat
 {
     public class PGraphicHooks
     {
-        public Dictionary<int, string> bodyPartName = new Dictionary<int, string>()
+        public static Dictionary<int, string> bodyPartName = new Dictionary<int, string>()
         {
             {0,"Body" },
             {1,"Hips" },
@@ -51,7 +51,7 @@ namespace ShadedCanopy.ShimmerSlugcat
             {
                 for (int i = 0; i < 10; i++)
                 {
-                    if (i < 9 && i != 2 && !sLeaser.sprites[i].element.name.StartsWith("Shimmer"))
+                    if (i < 9 && i != 2 && sLeaser.sprites[i].element.name != "Shimmer" + bodyPartName[i])
                     {
                         sLeaser.sprites[i].element = Futile.atlasManager.GetElementWithName("Shimmer" + sLeaser.sprites[i].element.name);
                     }

@@ -11,7 +11,7 @@ using static SCUtils.SCDevTools.NodeTreeManager.SCDevNodeTreeManager;
 
 namespace SCUtils.SCDevTools.NodeTreeManager
 {
-    internal static class SCDevNodeTreeManager
+    public static class SCDevNodeTreeManager
     {
         internal static Dictionary<TreeNode, List<VirtualObj>> virtualObjMap = new Dictionary<TreeNode, List<VirtualObj>>();
         internal static TreeNode rootNode = new TreeNode("Root");
@@ -30,6 +30,28 @@ namespace SCUtils.SCDevTools.NodeTreeManager
                 type2WeakRefsMap.Add(typeInfo.type, new List<WeakHandle>());
             }
             SCDevNodeTreeManager.rootNode.GetChild("Root.RainWorld.Game.World.Room", true);
+        }
+
+        //检查所有弱引用的对象是否还存活，清理掉已经被回收的对象
+        internal static void UpdateHandles()
+        {
+            foreach(var vobjLst in virtualObjMap.Values)
+            {
+                for(int i = vobjLst.Count - 1;i >= 0; i--)
+                {
+                    for(int j = vobjLst[i].refs.Count - 1; j >= 0; j--)
+                    {
+                        if (!vobjLst[i].refs[j].IsAlive)
+                        {
+                            vobjLst[i].refs.RemoveAt(j);
+                            if (vobjLst[i].refs.Count == 0)
+                            {
+                                vobjLst.RemoveAt(i);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         public static void Track(object obj)
@@ -95,74 +117,7 @@ namespace SCUtils.SCDevTools.NodeTreeManager
         }
 
 
-        public static void DrawVirtualObj(VirtualObj virtualObj)
-        {
-            foreach(var weakRef in virtualObj.refs)
-            {
-                if (!weakRef.IsAlive)
-                {
-                    ImGui.TextColored(new System.Numerics.Vector4(1, 0, 0, 1), "[Dead Reference]");
-                    continue;
-                }
-
-                
-                var typeInfo = NodeTreeTypeInfo.GetTypeInfo(weakRef.Target.GetType());
-                var obj = weakRef.Target;
-
-                ImGui.TextColored(new System.Numerics.Vector4(1, 0.5f, 0, 1), $"---{typeInfo.type.Name}---");
-
-                foreach (var field in typeInfo.valueFields)
-                {
-                    if (field.FieldType == typeof(string))
-                    {
-                        string val = field.GetValue(obj) as string;
-                        if (ImGui.InputText(field.Name, ref val, 256))
-                        {
-                            field.SetValue(obj, val);
-                        }
-                    }
-                    else if (field.FieldType == typeof(int))
-                    {
-                        int val = (int)field.GetValue(obj);
-                        if (ImGui.InputInt(field.Name, ref val))
-                        {
-                            field.SetValue(obj, val);
-                        }
-                    }
-                    else if (field.FieldType == typeof(float))
-                    {
-                        float val = (float)field.GetValue(obj);
-                        if (ImGui.InputFloat(field.Name, ref val))
-                        {
-                            field.SetValue(obj, val);
-                        }
-                    }
-                    else if (field.FieldType == typeof(Color))
-                    {
-                        Color val = (Color)field.GetValue(obj);
-                        System.Numerics.Vector4 vecVal = new System.Numerics.Vector4(val.r, val.g, val.b, val.a);
-
-                        if (ImGui.ColorPicker4(field.Name, ref vecVal))
-                        {
-                            val = new Color(vecVal.X, vecVal.Y, vecVal.Z, vecVal.W);
-                            field.SetValue(obj, val);
-                        }
-                    }
-                    else if (field.FieldType == typeof(Vector2))
-                    {
-                        Vector2 val = (Vector2)field.GetValue(obj);
-                        System.Numerics.Vector2 vecVal = new System.Numerics.Vector2(val.x, val.y);
-
-                        if (ImGui.InputFloat2(field.Name, ref vecVal))
-                        {
-                            val = new Vector2(vecVal.X, vecVal.Y);
-                            field.SetValue(obj, val);
-                        }
-                    }
-                }
-            }
-            
-        }
+       
 
         public static void UpdateTreeObjects()
         {
@@ -179,12 +134,17 @@ namespace SCUtils.SCDevTools.NodeTreeManager
     internal class TreeNode
     {
         internal string name;
+
+        bool _keepShown;
+
         internal List<TreeNode> children = new List<TreeNode>();
         internal List<SCDevNodeTreeManager.VirtualObj> virtualObjs = new List<SCDevNodeTreeManager.VirtualObj>();
 
-        public TreeNode(string name)
+        public TreeNode(string name, bool keepShown = false)
         {
             this.name = name;
+            _keepShown = keepShown;
+
             SCDevNodeTreeManager.virtualObjMap.Add(this, virtualObjs);
         }
 

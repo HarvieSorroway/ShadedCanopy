@@ -41,6 +41,11 @@ namespace SCUtils.SCDevTools.NodeTreeManager
         public SCDevToolsInspectValue() { }
     }
 
+    public class SCDevToolsDrawGraph : Attribute
+    {
+        public SCDevToolsDrawGraph() { }
+    }
+
     public abstract class SCDevToolsSpecialFieldType : Attribute
     {
         public SCDevToolsSpecialFieldType() { }
@@ -48,23 +53,20 @@ namespace SCUtils.SCDevTools.NodeTreeManager
 
     public sealed class SCDevToolsRangeField : SCDevToolsSpecialFieldType
     {
-        public float min, max, defaultVal;
-        public SCDevToolsRangeField(float min, float max, float defaultVal)
+        public float min, max;
+        public SCDevToolsRangeField(float min, float max)
         {
             this.min = min;
             this.max = max;
-            this.defaultVal = defaultVal;
         }
     }
 
     public sealed class SCDevToolsListBoxStringField: SCDevToolsSpecialFieldType
     {
         public string[] options;
-        public int defaultIndex;
-        public SCDevToolsListBoxStringField(string[] options, string defaultVal)
+        public SCDevToolsListBoxStringField(string[] options)
         {
             this.options = options;
-            this.defaultIndex = options.IndexOf(defaultVal);
         }
     }
 }

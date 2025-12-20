@@ -1,27 +1,33 @@
-﻿using SCUtils.DevToolUtils;
+﻿using BepInEx.Logging;
+using SCUtils.DevToolUtils;
 using SCUtils.SCDevTools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+
+#pragma warning disable CS0618
+[assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
+#pragma warning restore CS0618
 
 namespace SCUtils
 {
     public static class SCUtils
     {
-        public static void Init()
+        static ManualLogSource logger;
+        public static void Init(ManualLogSource manualLogSource)
         {
+            logger = manualLogSource;
             PlacedObjectExt.Init();
             SCDevToolsEntry.Init();
         }
 
-
-        public static string logString;
         public static void Log(string log)
         {
-            logString += $"\n[{System.DateTime.Now}]{log}";
+            logger.LogDebug(log);
         }
     }
 }

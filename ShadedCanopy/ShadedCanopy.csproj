@@ -67,6 +67,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Iterators\MechIterator\MechIteratorBehaviour\" />
     <Folder Include="Objects\" />
   </ItemGroup>
   <ItemGroup>

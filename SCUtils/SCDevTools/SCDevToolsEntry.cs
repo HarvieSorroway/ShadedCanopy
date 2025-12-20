@@ -53,13 +53,23 @@ namespace SCUtils.SCDevTools
                 Debug.LogException(ex);
             }
         }
+    
+        public static void TestUpdate()
+        {
+            testInstance2.floatValue = 1f + Mathf.Sin(Time.time);
+        }
     }
 
     [SCDevToolsInspectType("Root.TestA","TestClassA")]
     public class TestClass
     {
         [SCDevToolsInspectValue] public int intValue;
-        [SCDevToolsInspectValue] public float floatValue;
+
+        [SCDevToolsInspectValue]
+        [SCDevToolsRangeField(0, 2f)]
+        [SCDevToolsDrawGraph]
+        public float floatValue;
+
         [SCDevToolsInspectValue] public string stringValue;
     }
 
@@ -70,6 +80,19 @@ namespace SCUtils.SCDevTools
         public TestClass parent;
         [SCDevToolsInspectValue] public UnityEngine.Color colorValue;
         [SCDevToolsInspectValue] public Vector2 vec2Value;
+
+        [SCDevToolsInspectValue]
+        [SCDevToolsListBoxStringField(new string[]
+        {
+            "Option 1",
+            "Option 2",
+            "Option 3",
+            "Option 4"
+        })]
+        public string optionValue;
+
+
+        [SCDevToolsInspectValue] public CreatureTemplate.Type testExtEnum;
     }
 
     public class SCDevToolsGUI : IMGUIContext
@@ -82,6 +105,7 @@ namespace SCUtils.SCDevTools
 
         public override void Render(ref IntPtr IDXGISwapChain, ref uint SyncInterval, ref uint Flags)
         {
+            SCDevToolsEntry.TestUpdate();
             ImGui.Begin("SC DevTools", ref toolActive, ImGuiWindowFlags.MenuBar);
 
             if (ImGui.BeginMenuBar())//绘制模式选择
@@ -114,10 +138,6 @@ namespace SCUtils.SCDevTools
             {
                 RenderNodeTreePage();
             }
-
-            ImGui.Begin("SC Log");
-            ImGui.TextWrapped(SCUtils.logString);
-            ImGui.End();
         }
 
         void RenderDefaultPage()
@@ -181,7 +201,7 @@ namespace SCUtils.SCDevTools
 
                 //ImGui.SetNextWindowSize(new System.Numerics.Vector2(300, 100));
                 ImGui.Begin($"SC DevTools - {selectedObj.name}");
-                SCDevNodeTreeManager.DrawVirtualObj(selectedObj);
+                SCDevNodeInspector.DrawVirtualObj(selectedObj);
                 ImGui.End();
             }
         }
@@ -209,6 +229,7 @@ namespace SCUtils.SCDevTools
                         if (ImGui.IsItemClicked())
                         {
                             selectedObj = obj;
+                            SCDevNodeInspector.SetUpInspector(selectedObj);
                         }
 
                         ImGui.PopID();

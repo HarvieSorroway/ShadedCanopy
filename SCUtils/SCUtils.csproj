@@ -11,6 +11,9 @@
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="BepInEx">
+      <HintPath>..\includings\BepInEx.dll</HintPath>
+    </Reference>
     <Reference Include="HOOKS-Assembly-CSharp">
       <HintPath>..\includings\HOOKS-Assembly-CSharp.dll</HintPath>
     </Reference>

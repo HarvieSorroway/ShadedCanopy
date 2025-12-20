@@ -1,5 +1,6 @@
 ﻿using RWCustom;
 using ShadedCanopy.FlashingEffect;
+using ShadedCanopy.Iterators.MechIterator;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -91,8 +92,12 @@ namespace ShadedCanopy.ShimmerSlugcat
                 self.abstractCreature.Room.AddEntity(ab);
                 ab.RealizeInRoom();
             }
+           
+            if (Input.GetKey(KeyCode.LeftControl) && (mouse && !lastMouse))
+            {
+                self.room.AddObject(new MechIterator(self.room));
+            }
             lastMouse = mouse;
-
             if (shimmerPlayer.TryGetValue(self, out var module))
             {
                 module.playerGrabbed = GrabbedCondition(self);

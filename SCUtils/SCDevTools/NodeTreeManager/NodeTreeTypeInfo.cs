@@ -17,32 +17,37 @@ namespace SCUtils.SCDevTools.NodeTreeManager
 
         public static void BuildTypeInfos()
         {
-            foreach(var tp in typeof(NodeTreeTypeInfo).Assembly.GetTypes())//创建typeinfo
+            foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (!IsTrackType(tp))
-                    continue;
-
-                var typeInfo = new TypeInfo();
-                typeInfo.type = tp;
-                typeInfo.inspectInfos = tp.GetCustomAttribute<SCDevToolsInspectType>();
-
-                SCDevNodeTreeManager.rootNode.GetChild(typeInfo.inspectInfos.branchPatch, true);
-
-                foreach (var field in tp.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                foreach (var tp in assembly.SafeGetTypes())//创建typeinfo
                 {
-                    if (field.GetCustomAttribute<SCDevToolsInspectValue>() != null)
+                  
+                    if (!IsTrackType(tp))
+                        continue;
+                    SCUtils.Log($"BuildTypeInfos - Checking type {tp.Name} - {IsTrackType(tp)}");
+                    var typeInfo = new TypeInfo();
+                    typeInfo.type = tp;
+                    typeInfo.inspectInfos = tp.GetCustomAttribute<SCDevToolsInspectType>();
+
+                    SCDevNodeTreeManager.rootNode.GetChild(typeInfo.inspectInfos.branchPatch, true);
+
+                    foreach (var field in tp.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
                     {
-                        typeInfo.valueFields.Add(field);
-                        var specialFieldAttr = field.GetCustomAttribute<SCDevToolsSpecialFieldType>();
-                        if (specialFieldAttr != null)
+                        if (field.GetCustomAttribute<SCDevToolsInspectValue>() != null)
                         {
-                            typeInfo.specialFieldTypes.Add(field, specialFieldAttr);
+                            typeInfo.valueFields.Add(field);
+                            var specialFieldAttr = field.GetCustomAttribute<SCDevToolsSpecialFieldType>();
+                            if (specialFieldAttr != null)
+                            {
+                                typeInfo.specialFieldTypes.Add(field, specialFieldAttr);
+                            }
                         }
                     }
+                    typeInfos.Add(typeInfo);
+                    typeInfoMap.Add(tp, typeInfo);
                 }
-                typeInfos.Add(typeInfo);
-                typeInfoMap.Add(tp, typeInfo);
             }
+            
 
             foreach(var typeInfo in typeInfos)//创建typereferenceinfo
             {

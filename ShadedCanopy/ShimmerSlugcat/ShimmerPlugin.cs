@@ -25,7 +25,6 @@ namespace ShadedCanopy.ShimmerSlugcat
                 Futile.atlasManager.LoadAtlas("atlases/ShimmerPlayerArm");
                 Futile.atlasManager.LoadAtlas("atlases/ShimmerHips");
                 Futile.atlasManager.LoadAtlas("atlases/ShimmerBody");
-
             }
             catch (Exception e)
             {

@@ -80,7 +80,7 @@ namespace ShadedCanopy.ShimmerSlugcat
                             }
                             else
                             {
-                                sLeaser.sprites[i].element = Futile.atlasManager.GetElementWithName("Shimmer" + sLeaser.sprites[i].element);
+                                sLeaser.sprites[i].element = Futile.atlasManager.GetElementWithName("Shimmer" + sLeaser.sprites[i].element.name);
                             }
                         }
 

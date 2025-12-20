@@ -5,12 +5,23 @@ using System.Text;
 using System.Threading.Tasks;
 using RWCustom;
 using UnityEngine;
-using static Unity.IO.LowLevel.Unsafe.AsyncReadManagerMetrics;
 
 namespace ShadedCanopy.ShimmerSlugcat
 {
     public class PGraphicHooks
     {
+        public static Dictionary<int, string> bodyPartName = new Dictionary<int, string>()
+        {
+            {0,"Body" },
+            {1,"Hips" },
+            {2,"Tail" },
+            {3,"Head" },
+            {4,"Legs" },
+            {5,"PlayerArm" },
+            {6,"PlayerArm" },
+            {7,"OnTop" },
+            {8,"OnTop" },
+        };
         public static void Hooks()
         {
             On.PlayerGraphics.InitiateSprites += PlayerGraphics_InitiateSprites;
@@ -21,13 +32,13 @@ namespace ShadedCanopy.ShimmerSlugcat
         {
             if (PlayerHooks.shimmerPlayer.TryGetValue(self.player, out var module))
             {
-                bool flag = module.playerGrabbed;
-                string str = flag ? "Midground" : "GrabShaders";
-                FContainer fContainer = rCam.ReturnFContainer(str);
+                //bool flag = module.playerGrabbed;
+                //string str = flag ? "Midground" : "GrabShaders";
+                FContainer fContainer = rCam.ReturnFContainer("GrabShaders");
 
                 for (int i = 0; i < 10; i++)
                 {
-                    if (!flag && sLeaser.sprites[i].container != fContainer)
+                    if (sLeaser.sprites[i].container != fContainer)
                     {
                         sLeaser.sprites[i].RemoveFromContainer();
                         fContainer.AddChild(sLeaser.sprites[i]);
@@ -40,7 +51,7 @@ namespace ShadedCanopy.ShimmerSlugcat
             {
                 for (int i = 0; i < 10; i++)
                 {
-                    if (i < 9 && i != 2 && !sLeaser.sprites[i].element.name.StartsWith("Shimmer"))
+                    if (i < 9 && i != 2 && sLeaser.sprites[i].element.name != "Shimmer" + bodyPartName[i])
                     {
                         sLeaser.sprites[i].element = Futile.atlasManager.GetElementWithName("Shimmer" + sLeaser.sprites[i].element.name);
                     }

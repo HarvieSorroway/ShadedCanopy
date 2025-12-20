@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using RWCustom;
 using UnityEngine;
@@ -22,10 +23,26 @@ namespace ShadedCanopy.ShimmerSlugcat
             {7,"OnTop" },
             {8,"OnTop" },
         };
+        public static bool DMSenabled;
+
         public static void Hooks()
         {
             On.PlayerGraphics.InitiateSprites += PlayerGraphics_InitiateSprites;
             On.PlayerGraphics.DrawSprites += PlayerGraphics_DrawSprites;
+            On.RainWorld.PostModsInit += RainWorld_PostModsInit;
+        }
+
+        private static void RainWorld_PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
+        {
+            orig(self);
+            for (int i = 0; i < self.options.enabledMods.Count; i++)
+            {
+                if (self.options.enabledMods[i] == "dressmyslugcat")
+                {
+                    DMSenabled = true;
+                    break;
+                }
+            }
         }
 
         private static void PlayerGraphics_DrawSprites(On.PlayerGraphics.orig_DrawSprites orig, PlayerGraphics self, RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, UnityEngine.Vector2 camPos)
@@ -51,9 +68,26 @@ namespace ShadedCanopy.ShimmerSlugcat
             {
                 for (int i = 0; i < 10; i++)
                 {
-                    if (i < 9 && i != 2 && sLeaser.sprites[i].element.name != "Shimmer" + bodyPartName[i])
+                    try
                     {
-                        sLeaser.sprites[i].element = Futile.atlasManager.GetElementWithName("Shimmer" + sLeaser.sprites[i].element.name);
+                        if (i < 9 && i != 2 && !sLeaser.sprites[i].element.name.StartsWith("Shimmer" + bodyPartName[i]))
+                        {
+                            if (DMSenabled)
+                            {
+                                string[] str = Regex.Split(sLeaser.sprites[i].element.name, bodyPartName[i]);
+                                if(str.Length > 1)
+                                    sLeaser.sprites[i].element = Futile.atlasManager.GetElementWithName("Shimmer" + bodyPartName[i] + str[1]);
+                            }
+                            else
+                            {
+                                sLeaser.sprites[i].element = Futile.atlasManager.GetElementWithName("Shimmer" + sLeaser.sprites[i].element);
+                            }
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogException(ex);
                     }
 
                     if (i < 9)

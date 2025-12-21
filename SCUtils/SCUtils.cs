@@ -1,5 +1,6 @@
 ﻿using BepInEx.Logging;
 using SCUtils.DevToolUtils;
+using SCUtils.RwTasks;
 using SCUtils.SCDevTools;
 using System;
 using System.Collections.Generic;
@@ -22,7 +23,12 @@ namespace SCUtils
         {
             logger = manualLogSource;
             PlacedObjectExt.Init();
-            SCDevToolsEntry.Init();
+            RwTaskHooks.Init();
+            try
+            {
+                SCDevToolsEntry.Init();
+            }
+            catch { }
         }
 
         public static void Log(string log)

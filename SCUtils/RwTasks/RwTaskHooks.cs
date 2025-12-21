@@ -15,6 +15,17 @@ namespace SCUtils.RwTasks
         {
             On.RainWorld.Update += RainWorld_Update;
             On.MainLoopProcess.Update += MainLoopProcess_Update;
+            On.UpdatableAndDeletable.Destroy += UpdatableAndDeletable_Destroy;
+        }
+
+        private static void UpdatableAndDeletable_Destroy(On.UpdatableAndDeletable.orig_Destroy orig, UpdatableAndDeletable self)
+        {
+            orig(self);
+            if(self.TryGetDestroyTokenSource(out var cts))
+            {
+                cts.Cancel();
+                cts.Dispose();
+            }
         }
 
         private static void MainLoopProcess_Update(On.MainLoopProcess.orig_Update orig, MainLoopProcess self)

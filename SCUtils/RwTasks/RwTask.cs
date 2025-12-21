@@ -136,10 +136,63 @@ namespace SCUtils.RwTasks
         }
 
         /// <summary>
+        /// 无限期挂起，直到传入的 CancellationToken 被取消。
+        /// </summary>
+        /// <param name="token">用于触发取消的令牌</param>
+        public static RwTask WaitCanceled(CancellationToken token)
+            => DelayFrames(-1, token);
+
+        /// <summary>
+        /// 无限期挂起，直到传入的 CancellationTokenSource 被取消。
+        /// </summary>
+        /// <param name="cts">取消源，如果为 null 则使用默认 token</param>
+        public static RwTask WaitCanceled(CancellationTokenSource cts)
+            => WaitCanceled(cts?.Token ?? default);
+
+
+        /// <summary>
+        /// 等待 Token 被取消，但不会抛出 OperationCanceledException 异常。
+        /// </summary>
+        public static async RwTask WaitCanceledNoThrow(CancellationToken token)
+        {
+            try { await WaitCanceled(token); }
+            catch (OperationCanceledException) { }
+        }
+
+        /// <summary>
+        /// 等待传入的 任意一个 Token 被取消。
+        /// </summary>
+        /// <param name="tokens">Token 数组</param>
+        public static async RwTask WaitCanceledAny(params CancellationToken[] tokens)
+        {
+            if (tokens == null || tokens.Length == 0) return;
+
+            if (tokens.Length == 1)
+            {
+                await WaitCanceled(tokens[0]);
+                return;
+            }
+
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(tokens);
+            await WaitCanceled(linked.Token);
+        }
+
+
+
+        /// <summary>
         /// 测试样例
         /// </summary>
         /// <returns></returns>
-        private async RwTask Test()
+        private static void NoAwait()
+        {
+            Test().Forget(); //一定要调用Forget以确保任务被正确回收（在不await和GetResult的情况下）
+        }
+
+        /// <summary>
+        /// 测试样例
+        /// </summary>
+        /// <returns></returns>
+        private static async RwTask Test()
         {
             SCHelperUtils.Log(await Test2());
         }
@@ -149,7 +202,7 @@ namespace SCUtils.RwTasks
         /// 测试样例
         /// </summary>
         /// <returns></returns>
-        private async RwTask<DateTime> Test2()
+        private static async RwTask<DateTime> Test2()
         {
             SCHelperUtils.Log($"4 - {DateTime.Now}");
             await RwTask.DelayEarlyFrames(80);
@@ -160,6 +213,13 @@ namespace SCUtils.RwTasks
             SCHelperUtils.Log($"1 - {DateTime.Now}");
             await RwTask.DelayEarlyFrames(80);
             return DateTime.Now;
+        }
+
+        private static async void SwitchToRwLoop()
+        {
+            //其他线程操作
+            await RwTask.Yield();
+            //主线程操作
         }
     }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -113,12 +114,21 @@ namespace SCUtils.RwTasks
         public void OnCompleted(Action continuation, short token)
         {
             if (token != _token) return;
-            _continuation = continuation;
             if (_status != RwTaskStatus.Pending)  //已经完成
             {
                 continuation?.Invoke();
                 return;
             }
+            else
+            {
+                var capturedContext = ExecutionContext.Capture();
+                Action wrappedAction = () =>
+                {
+                    ExecutionContext.Run(capturedContext, _ => continuation(), null);
+                };
+                _continuation = wrappedAction;
+            }
+
         }
 
         public void GetResult(short token)
@@ -128,7 +138,8 @@ namespace SCUtils.RwTasks
                 if (token != _token) throw new InvalidOperationException();
 
                 if (_status is RwTaskStatus.Canceled or RwTaskStatus.Faulted)
-                    throw _exception;
+                    ExceptionDispatchInfo.Capture(_exception).Throw();
+
                 if (_status is not RwTaskStatus.Succeeded)
                 {
                     var ev = Volatile.Read(ref _waitEv);
@@ -154,7 +165,7 @@ namespace SCUtils.RwTasks
                     catch (ObjectDisposedException) { }
 
                     if (_status is RwTaskStatus.Canceled or RwTaskStatus.Faulted)
-                        throw _exception;
+                        ExceptionDispatchInfo.Capture(_exception).Throw();
                 }
             }
             finally
@@ -300,11 +311,19 @@ namespace SCUtils.RwTasks
         public void OnCompleted(Action continuation, short token)
         {
             if (token != _token) return;
-            _continuation = continuation;
             if (_status != RwTaskStatus.Pending) //已经完成
             {
                 continuation?.Invoke();
                 return;
+            }
+            else
+            {
+                var capturedContext = ExecutionContext.Capture();
+                Action wrappedAction = () =>
+                {
+                    ExecutionContext.Run(capturedContext, _ => continuation(), null);
+                };
+                _continuation = wrappedAction;
             }
         }
 
@@ -315,7 +334,8 @@ namespace SCUtils.RwTasks
                 if (token != _token) throw new InvalidOperationException();
 
                 if (_status is RwTaskStatus.Canceled or RwTaskStatus.Faulted)
-                    throw _exception;
+                    ExceptionDispatchInfo.Capture(_exception).Throw();
+
                 if (_status is not RwTaskStatus.Succeeded)
                 {
                     var ev = Volatile.Read(ref _waitEv);
@@ -342,7 +362,7 @@ namespace SCUtils.RwTasks
                     catch (ObjectDisposedException)  {  }
 
                     if (_status is RwTaskStatus.Canceled or RwTaskStatus.Faulted)
-                        throw _exception;
+                        ExceptionDispatchInfo.Capture(_exception).Throw();
 
                 }
                 return _result;

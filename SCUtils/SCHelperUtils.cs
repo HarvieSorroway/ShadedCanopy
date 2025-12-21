@@ -1,4 +1,5 @@
 ﻿using RWCustom;
+using SCUtils.RwTasks;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -16,7 +18,14 @@ namespace SCUtils
         //自定义log
         static bool logInit;
         static string path;
-        public static void Log(string msg)
+        private static int _mainThreadId;
+
+        public static bool IsMainThread
+        {
+            get { return Thread.CurrentThread.ManagedThreadId == _mainThreadId; }
+        }
+
+        public static void Log(object msg)
         {
             if (!logInit)
             {
@@ -24,7 +33,20 @@ namespace SCUtils
                 File.WriteAllText(path, "");
                 logInit = true;
             }
+            if (IsMainThread)
+            {
+                UnityEngine.Debug.Log("[ShadedCanopy] " + msg);
+            }
+            else
+            {
+                RwTaskHooks.PendingActions.Enqueue(() => UnityEngine.Debug.Log("[ShadedCanopy] " + msg));
+            }
             File.AppendAllText(path, msg + "\n");
+        }
+
+        public static void Init()
+        {
+            _mainThreadId = Thread.CurrentThread.ManagedThreadId;
         }
 
         public class CreatureFollowingLabel: CosmeticSprite  // 跟随生物的任意文本的测试用label

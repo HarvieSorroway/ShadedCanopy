@@ -29,5 +29,35 @@ namespace SCUtils
         {
             logger.LogDebug(log);
         }
+
+        #region AnimationEasings
+        public static float LerpEase(float t)
+        {
+            return Mathf.Lerp(t, 1f, Mathf.Pow(t, 0.5f));
+        }
+
+        public static float EaseInOutSine(float t)
+        {
+            return -(Mathf.Cos(Mathf.PI * t) - 1) / 2;
+        }
+
+        public static float EaseInOutCubic(float f)
+        {
+            return f < 0.5 ? 4 * f * f * f : 1 - Mathf.Pow(-2 * f + 2, 3) / 2;
+        }
+
+        public static float EaseOutElastic(float t)
+        {
+            if (t == 0)
+                return 0f;
+            if (t == 1)
+                return 1f;
+
+            float p = 1f * .3f;
+            float a = 1f;
+            float s = p / 4;
+            return (a * Mathf.Pow(2, -10 * t) * Mathf.Sin((t * 1f - s) * (2 * Mathf.PI) / p) + 1f) * 0.5f + t * 0.5f;
+        }
+        #endregion
     }
 }

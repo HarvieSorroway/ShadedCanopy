@@ -1,4 +1,8 @@
-﻿using System;
+﻿using Menu.Remix.MixedUI;
+using RWCustom;
+using SCUtils;
+using SCUtils.SCDevTools.NodeTreeManager;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -21,8 +25,13 @@ namespace ShadedCanopy.Iterators.MechIterator
         Dictionary<int, PointCaster> casterPointsFirstIndexMap = new Dictionary<int, PointCaster>();
 
         //动画参数
-        public float Expand;
-        public Vector2 lookDir;//-1 ~ 1;
+        float Expand;
+
+        public Vector2 noticedPlayerPos;
+        Vector2 lookDir;//-1 ~ 1;
+
+        public AnimationID animationID, nextAnimation;
+        Animation currentAnimation;
 
         public MechIteratorGraphic(MechIterator mechIterator)
         {
@@ -65,18 +74,17 @@ namespace ShadedCanopy.Iterators.MechIterator
                 }
                 points[i] = new Point(casterIndex, i - casterStartIndex);
             }
+
+            ForceSwitchAnimation(AnimationID.Idle);
         }
 
 
         public void Update()
         {
-            Expand = mechIterator.Expand;
+            noticedPlayerPos = mechIterator.room.game.FirstRealizedPlayer.firstChunk.pos;
+            AnimationUpdate();
 
-            Vector2 deltaPox = (mechIterator.room.game.FirstRealizedPlayer.firstChunk.pos - mechIterator.pos);
-            lookDir.x = Mathf.InverseLerp(-500f, 500f, deltaPox.x) * 2f - 1f;
-            lookDir.y = Mathf.InverseLerp(-500f, 500f, deltaPox.y) * 2f - 1f;
-
-            foreach(var ring in ringCasters)
+            foreach (var ring in ringCasters)
             {
                 ring.rotation = Quaternion.Euler(-90f + lookDir.y * 50f * Expand, 90f + lookDir.x * 50f * Expand, 0);
                 //ring.rotation = Quaternion.Euler(mechIterator.RotX, mechIterator.RotY, mechIterator.RotZ);
@@ -153,15 +161,52 @@ namespace ShadedCanopy.Iterators.MechIterator
         #endregion
 
         #region AnimationFunctions
+        public void AnimationUpdate()
+        {
+            if(currentAnimation.AllowSwitch && nextAnimation != null)
+            {
+                SwitchAnimation(nextAnimation);
+            }
+            currentAnimation?.Update();
+        }
         public void RequestSwitchAnimation(AnimationID newAnim)
         {
-            //newAnim.SwitchAnim(currentAnim);
-            //currentAnim = newAnim;
+            nextAnimation = newAnim;
         }
 
         public void ForceSwitchAnimation(AnimationID newAnim)
         {
+            SwitchAnimation(newAnim);
+        }
 
+        void SwitchAnimation(AnimationID newAnim)
+        {
+            Animation newAnimation;
+
+            if(newAnim == AnimationID.Idle)
+            {
+                newAnimation = new IdleAnimation(this);
+            }
+            else if(newAnim == AnimationID.NoticePlayer)
+            {
+                newAnimation = new NoticePlayerAnimation(this);
+            }
+            else if (newAnim == AnimationID.TalkToPlayer)
+            {
+                newAnimation = new Animation(this);
+            }
+            else
+            {
+                SCUtils.SCUtils.Log($"MechIteratorGraphic: Unknown AnimationID {newAnim}");
+                return;
+            }
+
+            if (currentAnimation != null)
+            {
+                newAnimation.SwitchAnim(currentAnimation);
+            }
+            currentAnimation = newAnimation;
+            nextAnimation = null;
         }
         #endregion
 
@@ -521,14 +566,96 @@ namespace ShadedCanopy.Iterators.MechIterator
         #region Animations
         internal class Animation
         {
+            public virtual bool AllowSwitch => true;
+
+            public MechIteratorGraphic graphic;
+
+            public int timeInAnim;
+            public Animation(MechIteratorGraphic graphic)
+            {
+                this.graphic = graphic;
+            }
+
             public virtual void Update()
             {
-
+                timeInAnim++;
             }
 
             public virtual void SwitchAnim(Animation lastAnim)
             {
 
+            }
+        }
+
+        internal class IdleAnimation : Animation
+        {
+            float initExpand;
+
+            public override bool AllowSwitch => timeInAnim > 40;
+
+            public IdleAnimation(MechIteratorGraphic graphic) : base(graphic)
+            {
+                initExpand = graphic.Expand;
+            }
+
+   
+            public override void SwitchAnim(Animation lastAnim)
+            {
+            }
+
+            public override void Update()
+            {
+                base.Update();
+                if(timeInAnim <= 40)
+                {
+                    graphic.Expand = SCUtils.SCUtils.EaseInOutCubic(Mathf.Lerp(initExpand, 0f, timeInAnim / 40f));
+                }
+                else
+                {
+                    graphic.lookDir = Vector2.zero;
+                    if (Vector2.Distance(graphic.noticedPlayerPos, graphic.mechIterator.pos) < 200f)
+                    {
+                        graphic.RequestSwitchAnimation(AnimationID.NoticePlayer);
+                    }
+                }
+            }
+        }
+
+        internal class NoticePlayerAnimation : Animation
+        {
+            float initExpand;
+            public override bool AllowSwitch => timeInAnim > 40;
+
+            public NoticePlayerAnimation(MechIteratorGraphic graphic) : base(graphic)
+            {
+                initExpand = graphic.Expand;
+            }
+
+            public override void SwitchAnim(Animation lastAnim)
+            {
+                base.SwitchAnim(lastAnim);
+                initExpand = graphic.Expand;
+            }
+
+            public override void Update()
+            {
+                base.Update();
+                if (timeInAnim <= 40)
+                {
+                    graphic.Expand = SCUtils.SCUtils.EaseInOutCubic(Mathf.Lerp(initExpand, 1f, timeInAnim / 40f));
+                }
+                else
+                {
+                    if (Vector2.Distance(graphic.noticedPlayerPos, graphic.mechIterator.pos) > 400f)
+                    {
+                        graphic.RequestSwitchAnimation(AnimationID.Idle);
+                    }
+                    Vector2 deltaPox = (graphic.noticedPlayerPos - graphic.mechIterator.pos);
+
+                    Vector2 targetLookDir = new Vector2(Mathf.InverseLerp(-500f, 500f, deltaPox.x) * 2f - 1f, Mathf.InverseLerp(-500f, 500f, deltaPox.y) * 2f - 1f);
+                    graphic.lookDir = Vector2.Lerp(graphic.lookDir, targetLookDir, 0.25f);
+                }
+              
             }
         }
 
@@ -544,5 +671,144 @@ namespace ShadedCanopy.Iterators.MechIterator
             }
         }
         #endregion
+
+        #region ProjectionText
+
+        [SCDevToolsInspectType("Root.RainWorld.Game.World.Room", "ProjTextLabel")]
+        public class ProjTextLabel : CosmeticSprite
+        {
+            public static Color labelCol = Custom.hexToColor("7BFFF0");
+
+            public FLabel[] rLabels, gLabels, bLabels;
+            public Vector2[] rBias, gBias, bBias;
+ 
+            List<Vector2> topLeftRelativePos = new List<Vector2>();
+
+            [SCDevToolsInspectValue]
+            [SCDevToolsRangeField(0f, 100f)]
+            public float revealProgression;
+
+            bool labelCleaned;
+            public ProjTextLabel(Room room, string text, Vector2 topLeft)
+            {
+                this.room = room;
+                this.pos = this.lastPos = topLeft;
+                string font = Custom.GetDisplayFont();
+
+                text = LabelTest.GlobalTextModifier(text);
+
+                FLetterQuadLine[] quadLines = Futile.atlasManager.GetFontWithName(font).GetQuadInfoForText(text, new FTextParams());
+                foreach(var line in quadLines)
+                {
+                    foreach(var quad in line.quads)
+                    {
+                        topLeftRelativePos.Add(quad.rect.position);
+                    }
+                }
+
+                rLabels = new FLabel[text.Length];
+                gLabels = new FLabel[text.Length];
+                bLabels = new FLabel[text.Length];
+
+                rBias = new Vector2[text.Length];
+                gBias = new Vector2[text.Length];
+                bBias = new Vector2[text.Length];
+
+                for(int i = 0;i < text.Length; i++)
+                {
+                    rLabels[i] = new FLabel(font, text.Substring(i, 1)) { shader = room.game.rainWorld.Shaders[SCResources.AdditiveDefaultShaderName], color = Color.red , alpha = 0f};
+                    gLabels[i] = new FLabel(font, text.Substring(i, 1)) { shader = room.game.rainWorld.Shaders[SCResources.AdditiveDefaultShaderName], color = Color.green , alpha = 0f};
+                    bLabels[i] = new FLabel(font, text.Substring(i, 1)) { shader = room.game.rainWorld.Shaders[SCResources.AdditiveDefaultShaderName], color = Color.blue , alpha = 0f };
+
+                    rBias[i] = Custom.RNV() * Mathf.Lerp(5f, 8f, Random.value);
+                    gBias[i] = Custom.RNV() * Mathf.Lerp(5f, 8f, Random.value);
+                    bBias[i] = Custom.RNV() * Mathf.Lerp(5f, 8f, Random.value);
+                }
+                SCDevNodeTreeManager.Track(this);
+            }
+
+            public override void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam)
+            {
+                sLeaser.sprites = new FSprite[rLabels.Length];
+                for(int i = 0; i< sLeaser.sprites.Length; i++)
+                {
+                    sLeaser.sprites[i] = new FSprite(SCResources.Blur80Atlas, true)
+                    {
+                        shader = room.game.rainWorld.Shaders[SCResources.AdditiveDefaultShaderName],
+                        color = Color.blue,
+                        alpha = 0f
+                    };
+                }
+                AddToContainer(sLeaser, rCam, null);
+            }
+
+            public override void AddToContainer(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, FContainer newContatiner)
+            {
+                if (newContatiner == null)
+                    newContatiner = rCam.ReturnFContainer("HUD");
+                for(int i = 0;i < rLabels.Length;i++)
+                {
+                    newContatiner.AddChild(sLeaser.sprites[i]);
+                    newContatiner.AddChild(rLabels[i]);
+                    newContatiner.AddChild(gLabels[i]);
+                    newContatiner.AddChild(bLabels[i]);
+                }
+            }
+
+            public override void Update(bool eu)
+            {
+                base.Update(eu);
+            }
+
+            public override void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
+            {
+                base.DrawSprites(sLeaser, rCam, timeStacker, camPos);
+
+                if (slatedForDeletetion)
+                {
+                    if (!labelCleaned)
+                        CleanOutLabels();
+                    return;
+                }
+
+                Vector2 smoothPos = Vector2.Lerp(lastPos, pos, timeStacker) - camPos;
+
+                for(int i = 0;i < rLabels.Length; i++)
+                {
+                    float localReveal = Mathf.Clamp01(revealProgression - i);
+
+                    float targetAlphaR, targetAlphaG, targetAlphaB;
+                    targetAlphaR = Mathf.Lerp(1f, labelCol.r, localReveal);
+                    targetAlphaG = Mathf.Lerp(1f, labelCol.g, localReveal);
+                    targetAlphaB = Mathf.Lerp(1f, labelCol.b, localReveal);
+
+                    rLabels[i].alpha = (Random.value < localReveal ? 1f : 0f) * targetAlphaR;
+                    rLabels[i].SetPosition(rBias[i] * Mathf.Pow(1f - localReveal, 2f) + topLeftRelativePos[i] + smoothPos);
+
+                    gLabels[i].alpha = (Random.value < localReveal ? 1f : 0f) * targetAlphaG;
+                    gLabels[i].SetPosition(gBias[i] * Mathf.Pow(1f - localReveal, 2f) + topLeftRelativePos[i] + smoothPos);
+
+
+                    bLabels[i].alpha = (Random.value < localReveal ? 1f : 0f) * targetAlphaB;
+                    bLabels[i].SetPosition(bBias[i] * Mathf.Pow(1f - localReveal, 2f) + topLeftRelativePos[i] + smoothPos);
+
+                    sLeaser.sprites[i].SetPosition(topLeftRelativePos[i] + smoothPos);
+                    sLeaser.sprites[i].alpha = Mathf.Pow((rLabels[i].alpha + gLabels[i].alpha + bLabels[i].alpha) / 3f, 2f);
+                }
+            }
+
+            public void CleanOutLabels()
+            {
+                for(int i = 0;i < rLabels.Length; i++)
+                {
+                    rLabels[i].RemoveFromContainer();
+                    gLabels[i].RemoveFromContainer();
+                    bLabels[i].RemoveFromContainer();
+                }
+            }
+
+        }
+        #endregion
+
     }
 }

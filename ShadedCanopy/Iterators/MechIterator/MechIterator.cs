@@ -44,6 +44,8 @@ namespace ShadedCanopy.Iterators.MechIterator
             graphic = new MechIteratorGraphic(this);
             this.room = room;
             SCDevNodeTreeManager.Track(this);
+
+            room.AddObject(new MechIteratorGraphic.ProjTextLabel(room, "This is test text.", pos + new Vector2(100f, 0f)));
         }
 
 

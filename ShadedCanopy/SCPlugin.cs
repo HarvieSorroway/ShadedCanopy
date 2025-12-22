@@ -9,10 +9,10 @@ using System.Linq;
 using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
-using System.Security.Permissions;
-using SCUtils;
 using ShadedCanopy.Creatures;
 using ShadedCanopy.Imgui;
+using SCUtils.RwTasks;
+using UnityEngine;
 
 
 #pragma warning disable CS0618
@@ -39,8 +39,15 @@ namespace ShadedCanopy
         }
         public void OnEnable()
         {
-            On.RainWorld.OnModsInit += RainWorld_OnModsInit;
-            SCCritobs.Init();
+            try
+            {
+                On.RainWorld.OnModsInit += RainWorld_OnModsInit;
+                SCCritobs.Init();
+            }
+            catch(Exception e)
+            {
+                Logger.LogFatal($"Exception during {ModName} OnEnable: {e}");
+            }
         }
 
         private void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
@@ -58,6 +65,7 @@ namespace ShadedCanopy
             
             SCUtils.SCUtils.Init(Logger);
             SCResources.LoadResources(self);
+
             //ImguiRegister.TryInit();
 
             SCUtils.SCHelperUtils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");

@@ -73,14 +73,19 @@
     <ProjectReference Include="..\SCUtils\SCUtils.csproj" />
     <ProjectReference Include="..\ShadedCanopy.Gen\ShadedCanopy.Gen\ShadedCanopy.Gen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
-  <Target Name="GenerateMod" AfterTargets="PostBuildEvent">
-    <ItemGroup>
-      <RemovePlugins Include="../mod/newest/plugins/$(TargetFileName)" />
-    </ItemGroup>
-    <ItemGroup>
-      <CopyPlugins Include="$(TargetPath)" />
-    </ItemGroup>
-    <Delete Files="@(RemovePlugins)" />
-    <Copy SourceFiles="@(CopyPlugins)" DestinationFolder="../mod/newest/plugins/" />
-  </Target>
+	<Target Name="GenerateMod" AfterTargets="PostBuildEvent">
+		<ItemGroup>
+			<RemovePlugins Include="../mod/newest/plugins/$(TargetFileName)" />
+			<RemovePlugins Include="../mod/newest/plugins/$(TargetName).pdb" />
+		</ItemGroup>
+
+		<ItemGroup>
+			<CopyPlugins Include="$(TargetPath)" />
+			<CopyPlugins Include="$(TargetDir)$(TargetName).pdb" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
+		</ItemGroup>
+
+		<Delete Files="@(RemovePlugins)" />
+
+		<Copy SourceFiles="@(CopyPlugins)" DestinationFolder="../mod/newest/plugins/" />
+	</Target>
 </Project>

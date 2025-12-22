@@ -2,6 +2,7 @@
 using SCUtils.DevToolUtils;
 using SCUtils.RwTasks;
 using SCUtils.SCDevTools;
+using SCUtils.SCTween;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +30,7 @@ namespace SCUtils
                 SCDevToolsEntry.Init();
             }
             catch { }
+            SCTweenExtension.Test();
         }
 
         public static void Log(string log)

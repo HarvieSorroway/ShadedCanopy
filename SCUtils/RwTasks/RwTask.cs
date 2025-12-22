@@ -94,7 +94,7 @@ namespace SCUtils.RwTasks
         /// <returns>返回一个等待任务。</returns>
         public static RwTask YieldEarly(CancellationToken token = default)
         {
-            var promise = RwTaskPromise.Create(0, token);
+            var promise = RwTaskPromise.Create(1, token);
             RwLoopRunner.EarlyUpdateRunner.Schedule(promise);
             return promise.Task;
         }
@@ -106,7 +106,7 @@ namespace SCUtils.RwTasks
         /// <returns>返回一个等待任务。</returns>
         public static RwTask Yield(CancellationToken token = default)
         {
-            var promise = RwTaskPromise.Create(0, token);
+            var promise = RwTaskPromise.Create(1, token);
             RwLoopRunner.LateUpdateRunner.Schedule(promise);
             return promise.Task;
         }
@@ -118,7 +118,7 @@ namespace SCUtils.RwTasks
         /// <returns>返回一个等待任务。</returns>
         public static RwTask YieldEarlyRaw(CancellationToken token = default)
         {
-            var promise = RwTaskPromise.Create(0, token);
+            var promise = RwTaskPromise.Create(1, token);
             RwLoopRunner.EarlyRawUpdateRunner.Schedule(promise);
             return promise.Task;
         }
@@ -130,7 +130,7 @@ namespace SCUtils.RwTasks
         /// <returns>返回一个等待任务。</returns>
         public static RwTask YieldRaw(CancellationToken token = default)
         {
-            var promise = RwTaskPromise.Create(0, token);
+            var promise = RwTaskPromise.Create(1, token);
             RwLoopRunner.LateRawUpdateRunner.Schedule(promise);
             return promise.Task;
         }

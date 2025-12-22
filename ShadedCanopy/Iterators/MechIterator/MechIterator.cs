@@ -12,43 +12,27 @@ namespace ShadedCanopy.Iterators.MechIterator
     internal class MechIterator : UpdatableAndDeletable, IDrawable
     {
         public MechIteratorGraphic graphic;
-
+        public MechIteratorBehaviour behaviour;
         [SCDevToolsInspectValue] 
         public Vector2 pos = new Vector2(500f, 400f);
 
-        //[SCDevToolsInspectValue]
-        public int FibonacciSphereCastCount = 100;
+        public LightSource lightSource;
 
-        [SCDevToolsInspectValue]
-        [SCDevToolsRangeField(10f, 1000f)]
-        public float FibonacciSphereCastRad = 60f;
-
-        [SCDevToolsInspectValue]
-        [SCDevToolsRangeField(0f, 1f)]
-        public float Expand = 1f;
+        public MechIteratorGraphic.ProjTextLabel currentLiveLabel;
 
 
-        [SCDevToolsInspectValue]
-        [SCDevToolsRangeField(-90f, 90f)]
-        public float RotX = 0f;
-
-        [SCDevToolsInspectValue]
-        [SCDevToolsRangeField(-90f, 90f)]
-        public float RotY = 0f;
-
-        [SCDevToolsInspectValue]
-        [SCDevToolsRangeField(-90f, 90f)]
-        public float RotZ = 0f;
         public MechIterator(Room room)
         {
-            graphic = new MechIteratorGraphic(this);
             this.room = room;
+
+            graphic = new MechIteratorGraphic(this);
+            behaviour = new MechIteratorBehaviour(this);
+
+            lightSource = new LightSource(pos, true, Color.cyan * 0.5f + Color.blue * 0.5f, this);
+            room.AddObject(lightSource);
+
             SCDevNodeTreeManager.Track(this);
-
-            room.AddObject(new MechIteratorGraphic.ProjTextLabel(room, "This is test text.", pos + new Vector2(100f, 0f)));
         }
-
-
 
         public override void Update(bool eu)
         {
@@ -56,6 +40,12 @@ namespace ShadedCanopy.Iterators.MechIterator
             if (slatedForDeletetion)
                 return;
             graphic.Update();
+            behaviour.Update();
+            if (currentLiveLabel != null && currentLiveLabel.slatedForDeletetion)
+                currentLiveLabel = null;
+            lightSource.setPos = pos;
+            lightSource.rad = 200f;
+            lightSource.alpha = 1f;
         }
 
         #region DrawFunctions
@@ -79,5 +69,31 @@ namespace ShadedCanopy.Iterators.MechIterator
             graphic.InitiateSprites(sLeaser, rCam);
         }
         #endregion
+
+        public bool TryStartNewConvLabel(string convText)
+        {
+            if (currentLiveLabel != null)
+            {
+                TryTurnOffCurrentLabel();
+                return false;
+            }
+            else
+            {
+                currentLiveLabel = new MechIteratorGraphic.ProjTextLabel(room, convText, pos + new Vector2(140f, 0f));
+                room.AddObject(currentLiveLabel);
+                return true;
+            }
+        }
+
+        public void TryTurnOffCurrentLabel()
+        {
+            if(currentLiveLabel != null)
+            {
+                currentLiveLabel.TurnOff();
+            }
+        }
+
+
+        
     }
 }

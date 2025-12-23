@@ -9,28 +9,60 @@ using UnityEngine;
 
 namespace SCUtils.SCTween
 {
-    internal static class SCTweenExtension
+    public static class SCTweenExtension
     {
         static float test1, test2;
+        static Vector2 testV1;
+
         public static void Test()
         {
-            SCHelperUtils.Log($"Tween Float Start at {DateTime.Now}");
-            test1.TestTweenFloat(0f, 1f, 2f).Forget();
+            test1.TweenFloat(0f, 1f, 2f).SetEase(SCHelperUtils.LerpEase).RunAsync().Forget();
 
-            SCHelperUtils.Log($"Tween Float2 Start at {DateTime.Now}");
-            test2.TestTweenFloat(1f, 3f, 3f).Forget();
+            //testV1.TweenVector2(Vector2.zero, Vector2.right,3f).OnFinish(() =>
+            //{
+            //    SCHelperUtils.Log("Vector2 Tween Finished");
+            //}).RunAsync().Forget();
         }
-        public static async RwTask TestTweenFloat(this float target, float from, float to, float duration)
+        public static SCTweenContext<float> TweenFloat(this float target, float from, float to, float duration)
         {
-            int frame = Mathf.CeilToInt(duration * 40);
+            SCHelperUtils.Log($"Tween Float Start at {DateTime.Now}, from {from} - to {to}, frames {Sec2Frame(duration)}");
 
-            for(int i = 0;i < frame;i++)
-            {
-                float t = (i + 1) / (float)frame;
-                target = Mathf.Lerp(from, to, t);
-                await RwTasks.RwTask.Yield();
-            }
-            SCHelperUtils.Log($"Tween Float Complete at {DateTime.Now}, value : {target}");
+            return new SCTweenContext<float>(
+                (v) =>  target = v,
+                from,
+                to,
+                Sec2Frame(duration),
+                Mathf.Lerp
+                );
+        }
+
+        public static SCTweenContext<Vector2> TweenVector2(this Vector2 target, Vector2 from, Vector2 to, float duration)
+        {
+            SCHelperUtils.Log($"Tween Vector2 Start at {DateTime.Now}, from {from} - to {to}, frames {Sec2Frame(duration)}");
+            return new SCTweenContext<Vector2>(
+                (v) => target = v,
+                from,
+                to,
+                Sec2Frame(duration),
+                Vector2.Lerp
+                );
+        }
+
+        public static SCTweenContext<Color> TweenColor(this Color target, Color from, Color to, float duration)
+        {
+            SCHelperUtils.Log($"Tween Color Start at {DateTime.Now}, from {from} - to {to}, frames {Sec2Frame(duration)}");
+            return new SCTweenContext<Color>(
+                (v) => target = v,
+                from,
+                to,
+                Sec2Frame(duration),
+                Color.Lerp
+                );
+        }
+
+        static int Sec2Frame(float sec)
+        {
+            return Mathf.CeilToInt(sec * 40);
         }
     }
 }

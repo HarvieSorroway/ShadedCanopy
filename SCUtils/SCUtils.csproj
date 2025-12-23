@@ -23,6 +23,12 @@
     <Reference Include="ImGui.NET">
       <HintPath>..\includings\ImGui.NET.dll</HintPath>
     </Reference>
+    <Reference Include="Mono.Cecil">
+      <HintPath>..\includings\Mono.Cecil.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.Utils">
+      <HintPath>..\includings\MonoMod.Utils.dll</HintPath>
+    </Reference>
     <Reference Include="rain-world-imgui-api">
       <HintPath>..\includings\rain-world-imgui-api.dll</HintPath>
     </Reference>

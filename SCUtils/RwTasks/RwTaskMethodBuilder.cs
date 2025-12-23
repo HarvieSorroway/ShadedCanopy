@@ -128,7 +128,7 @@ namespace SCUtils.RwTasks
 
                 if (_hasResult)
                 {
-                    return new RwTask<T>(_result);
+                    return RwTask.FromResult<T>(_result);
                 }
 
                 _promise = RwTaskPromise<T>.Create(CancellationToken.None);

@@ -99,9 +99,52 @@ namespace SCUtils.RwTasks
         }
 
         /// <summary>
-        /// 尝试获取该对象的销毁 TokenSource。
+        /// 将当前的 <see cref="RwTask{T}"/> 转换为标准的 <see cref="Task{T}"/>。
         /// </summary>
-        /// <returns></returns>
+        /// <typeparam name="T">任务结果的类型。</typeparam>
+        /// <param name="task">要转换的 RwTask 实例。</param>
+        /// <returns>一个包装了当前操作的标准 <see cref="Task{T}"/> 对象。</returns>
+        public static Task<T> AsTask<T>(this RwTask<T> task)
+        {
+            var tcs = new TaskCompletionSource<T>();
+            task.GetAwaiter().OnCompleted(() =>
+            {
+                try
+                {
+                    var result = task.GetAwaiter().GetResult();
+                    tcs.TrySetResult(result);
+                }
+                catch (Exception ex)
+                {
+                    tcs.TrySetException(ex);
+                }
+            });
+            return tcs.Task;
+        }
+
+        /// <summary>
+        /// 将当前的 <see cref="RwTask"/> 转换为标准的 <see cref="Task"/>。
+        /// </summary>
+        /// <param name="task">要转换的 RwTask 实例。</param>
+        /// <returns>一个包装了当前操作的标准 <see cref="Task"/> 对象。</returns>
+        public static Task AsTask(this RwTask task)
+        {
+            var tcs = new TaskCompletionSource<bool>();
+            task.GetAwaiter().OnCompleted(() =>
+            {
+                try
+                {
+                    task.GetAwaiter().GetResult();
+                    tcs.TrySetResult(true);
+                }
+                catch (Exception ex)
+                {
+                    tcs.TrySetException(ex);
+                }
+            });
+            return tcs.Task;
+        }
+
         internal static bool TryGetDestroyTokenSource(this UpdatableAndDeletable obj, out CancellationTokenSource cts)
         {
             if (_objDestroyTokens.TryGetValue(obj, out cts))

@@ -11,6 +11,7 @@ namespace SCUtils.RwTasks
     public interface IRwTaskSource
     {
         RwTaskStatus GetStatus(short token);
+
         void OnCompleted(Action continuation, short token);
 
         bool Execute();
@@ -32,8 +33,6 @@ namespace SCUtils.RwTasks
         private static readonly Stack<RwTaskPromise> _pool = new Stack<RwTaskPromise>();
         private static object _poolLock = new();
 
-
-
         public static RwTaskPromise Create(int delayCount, CancellationToken cancellationToken)
         {
             RwTaskPromise promise;
@@ -44,6 +43,31 @@ namespace SCUtils.RwTasks
             }
             promise._cancellationToken = cancellationToken;
             promise._remainingFrames = delayCount;
+            return promise;
+        }
+
+        public static RwTaskPromise CreateCompleted()
+        {
+            RwTaskPromise promise;
+            lock (_poolLock)
+            {
+                if (_pool.Count > 0) promise = _pool.Pop();
+                else promise = new RwTaskPromise();
+            }
+            promise._status = RwTaskStatus.Succeeded;
+            return promise;
+        }
+
+        public static RwTaskPromise CreateCanceled(CancellationToken token)
+        {
+            RwTaskPromise promise;
+            lock (_poolLock)
+            {
+                if (_pool.Count > 0) promise = _pool.Pop();
+                else promise = new RwTaskPromise();
+            }
+            promise._cancellationToken = token;
+            promise._status = RwTaskStatus.Canceled;
             return promise;
         }
 
@@ -114,21 +138,29 @@ namespace SCUtils.RwTasks
         public void OnCompleted(Action continuation, short token)
         {
             if (token != _token) return;
-            if (_status != RwTaskStatus.Pending)  //已经完成
+            if (continuation == null)
             {
-                continuation?.Invoke();
+                Interlocked.Exchange(ref _continuation, null);
                 return;
             }
-            else
+            Action wrappedAction = continuation;
+            var capturedContext = ExecutionContext.Capture();
+            wrappedAction = () => ExecutionContext.Run(capturedContext, _ => continuation(), null);
+
+            var oldContinuation = Interlocked.CompareExchange(ref _continuation, wrappedAction, null);
+
+            if (oldContinuation != null)
             {
-                var capturedContext = ExecutionContext.Capture();
-                Action wrappedAction = () =>
-                {
-                    ExecutionContext.Run(capturedContext, _ => continuation(), null);
-                };
-                _continuation = wrappedAction;
+                throw new InvalidOperationException("Task already has a continuation.");
             }
 
+
+            if (_isFinished) //如果_isFinished为true，说明任务已经完成，
+                             //需要立刻执行continuation（如果continuation被执行的情况下，_continuation应该为null）
+            {
+                var span = Interlocked.Exchange(ref _continuation, null);
+                span?.Invoke();
+            }
         }
 
         public void GetResult(short token)
@@ -142,6 +174,9 @@ namespace SCUtils.RwTasks
 
                 if (_status is not RwTaskStatus.Succeeded)
                 {
+                    if (SCHelperUtils.IsMainThread)
+                        throw new InvalidOperationException("Call GetResult for an uncompleted rwTask in mainThread will cause deadlocked");
+
                     var ev = Volatile.Read(ref _waitEv);
                     if (ev is null)
                     {
@@ -226,6 +261,8 @@ namespace SCUtils.RwTasks
             return true;
         }
 
+        internal short Token => _token;
+
         public RwTask Task => new RwTask(this, _token);
 
         public ref IRwTaskSource NextNode => ref _nextNode;
@@ -247,6 +284,31 @@ namespace SCUtils.RwTasks
                 else promise = new RwTaskPromise<T>();
             }
             promise._cancellationToken = cancellationToken;
+            return promise;
+        }
+
+        public static RwTaskPromise<T> CreateCompleted()
+        {
+            RwTaskPromise<T> promise;
+            lock (_poolLock)
+            {
+                if (_pool.Count > 0) promise = _pool.Pop();
+                else promise = new RwTaskPromise<T>();
+            }
+            promise._status = RwTaskStatus.Succeeded;
+            return promise;
+        }
+
+        public static RwTaskPromise<T> CreateCanceled(CancellationToken token)
+        {
+            RwTaskPromise<T> promise;
+            lock (_poolLock)
+            {
+                if (_pool.Count > 0) promise = _pool.Pop();
+                else promise = new RwTaskPromise<T>();
+            }
+            promise._cancellationToken = token;
+            promise._status = RwTaskStatus.Canceled;
             return promise;
         }
 
@@ -311,19 +373,28 @@ namespace SCUtils.RwTasks
         public void OnCompleted(Action continuation, short token)
         {
             if (token != _token) return;
-            if (_status != RwTaskStatus.Pending) //已经完成
+            if (continuation == null)
             {
-                continuation?.Invoke();
+                Interlocked.Exchange(ref _continuation, null);
                 return;
             }
-            else
+            Action wrappedAction = continuation;
+            var capturedContext = ExecutionContext.Capture();
+            wrappedAction = () => ExecutionContext.Run(capturedContext, _ => continuation(), null);
+
+            var oldContinuation = Interlocked.CompareExchange(ref _continuation, wrappedAction, null);
+
+            if (oldContinuation != null)
             {
-                var capturedContext = ExecutionContext.Capture();
-                Action wrappedAction = () =>
-                {
-                    ExecutionContext.Run(capturedContext, _ => continuation(), null);
-                };
-                _continuation = wrappedAction;
+                throw new InvalidOperationException("Task already has a continuation.");
+            }
+
+
+            if (_isFinished) //如果_isFinished为true，说明任务已经完成，
+                             //需要立刻执行continuation（如果continuation被执行的情况下，_continuation应该为null）
+            {
+                var span = Interlocked.Exchange(ref _continuation, null);
+                span?.Invoke();
             }
         }
 
@@ -338,6 +409,9 @@ namespace SCUtils.RwTasks
 
                 if (_status is not RwTaskStatus.Succeeded)
                 {
+                    if (SCHelperUtils.IsMainThread)
+                        throw new InvalidOperationException("Call GetResult for an uncompleted rwTask in mainThread will cause deadlocked");
+                        
                     var ev = Volatile.Read(ref _waitEv);
                     if (ev is null)
                     {
@@ -427,6 +501,8 @@ namespace SCUtils.RwTasks
             }
             return true;
         }
+
+        internal short Token => _token;
 
         public RwTask<T> Task => new RwTask<T>(this, _token);
 

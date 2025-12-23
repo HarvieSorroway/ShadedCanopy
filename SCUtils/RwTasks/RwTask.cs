@@ -38,7 +38,6 @@ namespace SCUtils.RwTasks
         /// </summary>
         /// <param name="frame">要延迟的帧数。</param>
         /// <param name="token">取消令牌，用于取消等待。</param>
-        /// <returns>返回一个等待任务。</returns>
         public static RwTask DelayFrames(int frame, CancellationToken token = default)
         {
             var promise = RwTaskPromise.Create(frame, token);
@@ -51,7 +50,6 @@ namespace SCUtils.RwTasks
         /// </summary>
         /// <param name="frame">要延迟的帧数。</param>
         /// <param name="token">取消令牌，用于取消等待。</param>
-        /// <returns>返回一个等待任务。</returns>
         public static RwTask DelayEarlyFrames(int frame, CancellationToken token = default)
         {
             var promise = RwTaskPromise.Create(frame, token);
@@ -65,7 +63,6 @@ namespace SCUtils.RwTasks
         /// </summary>
         /// <param name="frame">要延迟的帧数。</param>
         /// <param name="token">取消令牌，用于取消等待。</param>
-        /// <returns>返回一个等待任务。</returns>
         public static RwTask DelayRawFrames(int frame, CancellationToken token = default)
         {
             var promise = RwTaskPromise.Create(frame, token);
@@ -79,7 +76,6 @@ namespace SCUtils.RwTasks
         /// </summary>
         /// <param name="frame">要延迟的帧数。</param>
         /// <param name="token">取消令牌，用于取消等待。</param>
-        /// <returns>返回一个等待任务。</returns>
         public static RwTask DelayEarlyRawFrames(int frame, CancellationToken token = default)
         {
             var promise = RwTaskPromise.Create(frame, token);
@@ -91,7 +87,6 @@ namespace SCUtils.RwTasks
         /// 挂起当前任务，直到下一帧的 Update 开始阶段。
         /// </summary>
         /// <param name="token">取消令牌。</param>
-        /// <returns>返回一个等待任务。</returns>
         public static RwTask YieldEarly(CancellationToken token = default)
         {
             var promise = RwTaskPromise.Create(1, token);
@@ -103,7 +98,6 @@ namespace SCUtils.RwTasks
         /// 挂起当前任务，直到下一帧的 Update 结束阶段。
         /// </summary>
         /// <param name="token">取消令牌。</param>
-        /// <returns>返回一个等待任务。</returns>
         public static RwTask Yield(CancellationToken token = default)
         {
             var promise = RwTaskPromise.Create(1, token);
@@ -115,7 +109,6 @@ namespace SCUtils.RwTasks
         /// 挂起当前任务，直到下一帧的 RawUpdate 开始阶段。
         /// </summary>
         /// <param name="token">取消令牌。</param>
-        /// <returns>返回一个等待任务。</returns>
         public static RwTask YieldEarlyRaw(CancellationToken token = default)
         {
             var promise = RwTaskPromise.Create(1, token);
@@ -127,7 +120,6 @@ namespace SCUtils.RwTasks
         /// 挂起当前任务，直到下一帧的 RawUpdate 结束阶段。
         /// </summary>
         /// <param name="token">取消令牌。</param>
-        /// <returns>返回一个等待任务。</returns>
         public static RwTask YieldRaw(CancellationToken token = default)
         {
             var promise = RwTaskPromise.Create(1, token);
@@ -136,16 +128,28 @@ namespace SCUtils.RwTasks
         }
 
         /// <summary>
+        /// 异步等待，直到指定的条件为真。
+        /// </summary>
+        /// <param name="predicate">要评估的条件函数。当该函数返回 <c>true</c> 时停止等待。</param>
+        /// <param name="token">用于取消等待操作的取消令牌。</param>
+        /// <exception cref="OperationCanceledException">如果在等待期间取消令牌被触发。</exception>
+        public static async RwTask WaitUntil(Func<bool> predicate, CancellationToken token = default)
+        {
+            while (!predicate())
+            {
+                await Yield(token);
+            }
+        }
+
+        /// <summary>
         /// 无限期挂起，直到传入的 CancellationToken 被取消。
         /// </summary>
-        /// <param name="token">用于触发取消的令牌</param>
         public static RwTask WaitCanceled(CancellationToken token)
             => DelayFrames(-1, token);
 
         /// <summary>
         /// 无限期挂起，直到传入的 CancellationTokenSource 被取消。
         /// </summary>
-        /// <param name="cts">取消源，如果为 null 则使用默认 token</param>
         public static RwTask WaitCanceled(CancellationTokenSource cts)
             => WaitCanceled(cts?.Token ?? default);
 
@@ -162,7 +166,6 @@ namespace SCUtils.RwTasks
         /// <summary>
         /// 等待传入的 任意一个 Token 被取消。
         /// </summary>
-        /// <param name="tokens">Token 数组</param>
         public static async RwTask WaitCanceledAny(params CancellationToken[] tokens)
         {
             if (tokens == null || tokens.Length == 0) return;
@@ -177,7 +180,263 @@ namespace SCUtils.RwTasks
             await WaitCanceled(linked.Token);
         }
 
+        /// <summary>
+        /// 创建一个任务，该任务在所有提供的任务完成后完成。
+        /// </summary>
+        public static RwTask WhenAll(IEnumerable<RwTask> tasks)
+        {
+            return WhenAll(tasks.ToArray());
+        }
 
+        /// <summary>
+        /// 创建一个任务，该任务在所有提供的任务完成后完成。
+        /// </summary>
+        public static async RwTask WhenAll(params RwTask[] tasks)
+        {
+            if (tasks == null || tasks.Length == 0) return;
+            var span = (RwTask[])tasks.Clone();
+            var tcs = new RwTaskCompletionSource<bool>();
+            int remaining = tasks.Length;
+            bool hasError = false;
+            List<Exception> exceptions = null;
+            foreach (var task in span)
+            {
+                task.GetAwaiter().OnCompleted(() =>
+                {
+                    try
+                    {
+                        task.GetAwaiter().GetResult();
+                    }
+                    catch (Exception ex)
+                    {
+                        Volatile.Write(ref hasError, true);
+                        if (exceptions == null)
+                        {
+                            exceptions = new List<Exception>();
+                        }
+                        exceptions.Add(ex);
+                    }
+                    if (Interlocked.Decrement(ref remaining) == 0)
+                    {
+                        if (Volatile.Read(ref hasError))
+                            tcs.TrySetException(new AggregateException("One or more tasks failed", exceptions));
+                        else
+                            tcs.TrySetResult(true);
+                    }
+                });
+            }
+            await tcs.Task;
+        }
+
+        /// <summary>
+        /// 创建一个任务，该任务在所有提供的任务完成后完成。
+        /// </summary>
+        public static RwTask<T[]> WhenAll<T>(IEnumerable<RwTask<T>> tasks)
+        {
+            return WhenAll(tasks.ToArray());
+        }
+
+        /// <summary>
+        /// 创建一个任务，该任务在所有提供的任务完成后完成。
+        /// </summary>
+        public static async RwTask<T[]> WhenAll<T>(params RwTask<T>[] tasks)
+        {
+            if (tasks == null || tasks.Length == 0) return default;
+            var span = (RwTask<T>[])tasks.Clone();
+            var tcs = new RwTaskCompletionSource<T[]>();
+            int remaining = span.Length;
+            bool hasError = false;
+            List<Exception> exceptions = null;
+            T[] results = new T[span.Length];
+            foreach (var task in span)
+            {
+                task.GetAwaiter().OnCompleted(() =>
+                {
+                    try
+                    {
+                        var result = task.GetAwaiter().GetResult();
+                        results[span.Length - remaining] = result;
+                    }
+                    catch (Exception ex)
+                    {
+                        Volatile.Write(ref hasError, true);
+                        if (exceptions == null)
+                        {
+                            exceptions = new List<Exception>();
+                        }
+                        exceptions.Add(ex);
+                    }
+                    if (Interlocked.Decrement(ref remaining) == 0)
+                    {
+                        if (Volatile.Read(ref hasError))
+                            tcs.TrySetException(new AggregateException("One or more tasks failed", exceptions));
+                        else
+                            tcs.TrySetResult(results);
+                    }
+                });
+            }
+            return await tcs.Task;
+        }
+
+        /// <summary>
+        /// 创建一个任务，该任务在提供的任意一个任务完成时完成。
+        /// </summary>
+        public static RwTask WhenAny(IEnumerable<RwTask> tasks)
+        {
+            return WhenAny(tasks.ToArray());
+        }
+
+        /// <summary>
+        /// 创建一个任务，该任务在提供的任意一个任务完成时完成。
+        /// </summary>
+        public static async RwTask WhenAny(params RwTask[] tasks)
+        {
+            if (tasks == null || tasks.Length == 0) return;
+            var tcs = new RwTaskCompletionSource<bool>();
+            var span = (RwTask[])tasks.Clone();
+            foreach (var task in span)
+            {
+                task.GetAwaiter().OnCompleted(() =>
+                {
+                    try
+                    {
+                        task.GetAwaiter().GetResult();
+                        tcs.TrySetResult(true);
+                    }
+                    catch (Exception ex)
+                    {
+                        tcs.TrySetException(ex);
+                    }
+                });
+            }
+            await tcs.Task;
+            foreach(var task in span)
+            {
+                task.GetAwaiter().OnCompleted(null); //释放tcs引用
+            }
+        }
+
+        /// <summary>
+        /// 创建一个任务，该任务在提供的任意一个任务完成时完成。
+        /// </summary>
+        public static RwTask<T> WhenAny<T>(IEnumerable<RwTask<T>> tasks)
+        {
+            return WhenAny(tasks.ToArray());
+        }
+
+        /// <summary>
+        /// 创建一个任务，该任务在提供的任意一个任务完成时完成。
+        /// </summary>
+        public static async RwTask<T> WhenAny<T>(params RwTask<T>[] tasks)
+        {
+            if (tasks == null || tasks.Length == 0) return default;
+            var tcs = new RwTaskCompletionSource<T>();
+            var span = (RwTask<T>[])tasks.Clone();
+            foreach (var task in span)
+            {
+                task.GetAwaiter().OnCompleted(() =>
+                {
+                    try
+                    {
+                        var result = task.GetAwaiter().GetResult();
+                        tcs.TrySetResult(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        tcs.TrySetException(ex);
+                    }
+                });
+            }
+            var re = await tcs.Task;
+            foreach (var task in span)
+            {
+                task.GetAwaiter().OnCompleted(null); //释放tcs引用
+            }
+            return re;
+        }
+
+        /// <summary>
+        /// 异步等待 <see cref="WaitHandle"/> 在指定时间内收到信号。
+        /// </summary>
+        /// <param name="waitHandle">要等待的同步句柄（如 AutoResetEvent, ManualResetEvent 等）。</param>
+        /// <param name="timeoutMilliseconds">等待的超时时间（毫秒）。</param>
+        /// <param name="token">用于取消等待操作的取消令牌。</param>
+        /// <returns>
+        /// 一个包含布尔值的任务：
+        /// <c>true</c> 表示句柄在超时前收到了信号；
+        /// <c>false</c> 表示在收到信号前已超时。
+        /// </returns>
+        /// <exception cref="OperationCanceledException">如果取消令牌被触发。</exception>
+        public static async RwTask<bool> WaitAsync(WaitHandle waitHandle, int timeoutMilliseconds, CancellationToken token)
+        {
+            if (waitHandle.WaitOne(0)) return true;
+            if (token.IsCancellationRequested)
+                return await RwTask.FromCanceled<bool>(token);
+
+            var tcs = new RwTaskCompletionSource<bool>();
+            var ctr = token.Register(() => tcs.TrySetCanceled());
+
+            RegisteredWaitHandle registeredWaitHandle = null;
+            WaitOrTimerCallback callback = (state, timedOut) =>
+            {
+                ctr.Dispose();
+                registeredWaitHandle?.Unregister(null);
+
+                if (timedOut)
+                {
+                    tcs.TrySetResult(false);
+                }
+                else
+                {
+                    tcs.TrySetResult(true);
+                }
+            };
+
+            registeredWaitHandle = ThreadPool.RegisterWaitForSingleObject(
+                waitHandle,
+                callback,
+                null,
+                timeoutMilliseconds,
+                executeOnlyOnce: true
+            );
+
+            return await tcs.Task;
+        }
+
+        /// <summary>
+        /// 创建一个处于已取消状态的任务。
+        /// </summary>
+        public static RwTask FromCanceled(CancellationToken token)
+        {
+            var promise = RwTaskPromise.CreateCanceled(token);
+            return promise.Task;
+        }
+
+        /// <summary>
+        /// 创建一个处于已取消状态的带返回值的任务。
+        /// </summary>
+        public static RwTask<T> FromCanceled<T>(CancellationToken token)
+        {
+            var promise = RwTaskPromise<T>.CreateCanceled(token);
+            return promise.Task;
+        }
+
+        /// <summary>
+        /// 创建一个已成功完成的任务。
+        public static RwTask FromeResult()
+        {
+            var promise = RwTaskPromise.CreateCompleted();
+            return promise.Task;
+        }
+
+        /// <summary>
+        /// 创建一个已成功完成的带返回值的任务。
+        /// </summary>
+        public static RwTask<T> FromResult<T>()
+        {
+            var promise = RwTaskPromise<T>.CreateCompleted();
+            return promise.Task;
+        }
 
         /// <summary>
         /// 测试样例
@@ -234,9 +493,9 @@ namespace SCUtils.RwTasks
             _token = token;
         }
 
-        public static readonly RwTask CompletedTask = new RwTask(null, 0);
-
-
+        /// <summary>
+        /// 获取用于等待此任务的等待者（Awaiter）。
+        /// </summary>
         public RwTaskAwaiter GetAwaiter()
         {
             return new RwTaskAwaiter(this);
@@ -251,6 +510,9 @@ namespace SCUtils.RwTasks
                 _task = task;
             }
 
+            /// <summary>
+            /// 获取一个值，该值指示任务是否已完成。
+            /// </summary>
             public bool IsCompleted
             {
                 get
@@ -260,15 +522,44 @@ namespace SCUtils.RwTasks
                 }
             }
 
+            /// <summary>
+            /// 结束对任务的等待；如果任务失败，将在此处抛出异常。
+            /// </summary>
             public void GetResult()
             {
                 if (_task._source == null) return;
                 ((RwTaskPromise)(_task._source)).GetResult(_task._token);
             }
-
+            /// <summary>
+            /// 注册在任务完成时调用的后续操作。
+            /// </summary>
             public void OnCompleted(Action continuation)
             {
                 _task._source.OnCompleted(continuation, _task._token);
+            }
+        }
+
+        /// <summary>
+        /// 指示任务是否已完成。
+        /// </summary>
+        public bool IsCompleted
+        {
+            get
+            {
+                if (_source == null) return true;
+                return GetAwaiter().IsCompleted;
+            }
+        }
+
+        /// <summary>
+        /// 指示任务是否因异常而失败。
+        /// </summary>
+        public bool IsFaulted
+        {
+            get
+            {
+                if (_source == null) return false;
+                return _source.GetStatus(_token) == RwTaskStatus.Faulted;
             }
         }
     }
@@ -293,13 +584,13 @@ namespace SCUtils.RwTasks
             _token = token;
         }
 
-        public static readonly RwTask CompletedTask = new RwTask(null, 0);
-
-
+        /// <summary>
+        /// 获取用于等待此任务的等待者（Awaiter）。
+        /// </summary>
         public RwTaskAwaiter GetAwaiter()
         {
             return new RwTaskAwaiter(this);
-        }
+        }   
 
         public readonly struct RwTaskAwaiter : INotifyCompletion
         {
@@ -310,6 +601,9 @@ namespace SCUtils.RwTasks
                 _task = task;
             }
 
+            /// <summary>
+            /// 获取一个值，该值指示任务是否已完成。
+            /// </summary>
             public bool IsCompleted
             {
                 get
@@ -319,16 +613,46 @@ namespace SCUtils.RwTasks
                 }
             }
 
+            /// <summary>
+            /// 结束对任务的等待；如果任务失败，将在此处抛出异常。
+            /// </summary>
             public T GetResult()
             {
                 if (_task._source == null) return _task._result;
                 return ((RwTaskPromise<T>)(_task._source)).GetResult(_task._token);
             }
 
+            /// <summary>
+            /// 注册在任务完成时调用的后续操作。
+            /// </summary>
             public void OnCompleted(Action continuation)
             {
              
                 _task._source.OnCompleted(continuation, _task._token);
+            }
+        }
+
+        /// <summary>
+        /// 指示任务是否已完成。
+        /// </summary>
+        public bool IsCompleted
+        {
+            get
+            {
+                if (_source == null) return true;
+                return GetAwaiter().IsCompleted;
+            }
+        }
+
+        /// <summary>
+        /// 指示任务是否因异常而失败。
+        /// </summary>
+        public bool IsFaulted
+        {
+            get
+            {
+                if (_source == null) return false;
+                return _source.GetStatus(_token) == RwTaskStatus.Faulted;
             }
         }
     }

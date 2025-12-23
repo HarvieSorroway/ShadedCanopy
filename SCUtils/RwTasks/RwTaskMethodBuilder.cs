@@ -54,7 +54,7 @@ namespace SCUtils.RwTasks
 
                 if (_isCompleted)
                 {
-                    return RwTask.CompletedTask;
+                    return RwTask.FromeResult();
                 }
                 _promise = RwTaskPromise.Create(0, CancellationToken.None);
                 return _promise.Task;

@@ -115,7 +115,7 @@ namespace SCUtils.RwTasks
             node.Token = promise.Token;
             lock (_lock)
             {
-                promise.NextNode = null;
+                node.NextNode = null;
                 if (_delayHead == null)
                 {
                     _delayHead = node;

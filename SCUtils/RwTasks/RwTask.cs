@@ -354,7 +354,7 @@ namespace SCUtils.RwTasks
             await tcs.Task;
             foreach(var task in span)
             {
-                task.GetAwaiter().OnCompleted(null); //释放tcs引用
+                task.Forget(); //清理
             }
         }
 
@@ -392,7 +392,7 @@ namespace SCUtils.RwTasks
             var re = await tcs.Task;
             foreach (var task in span)
             {
-                task.GetAwaiter().OnCompleted(null); //释放tcs引用
+                task.Forget(); //清理
             }
             return re;
         }
@@ -468,6 +468,25 @@ namespace SCUtils.RwTasks
             return promise.Task;
         }
 
+
+        /// <summary>
+        /// 创建一个处于异常状态的任务。
+        /// </summary>
+        public static RwTask FromException(Exception exception)
+        {
+            var promise = RwTaskPromise.CreateException(exception);
+            return promise.Task;
+        }
+
+        /// <summary>
+        /// 创建一个处于异常状态的带返回值的任务。
+        /// </summary>
+        public static RwTask<T> FromException<T>(Exception exception)
+        {
+            var promise = RwTaskPromise<T>.CreateException(exception);
+            return promise.Task;
+        }
+
         /// <summary>
         /// 创建一个已成功完成的任务。
         public static RwTask FromResult()
@@ -483,49 +502,6 @@ namespace SCUtils.RwTasks
         {
             var promise = RwTaskPromise<T>.CreateCompleted(result);
             return promise.Task;
-        }
-
-        /// <summary>
-        /// 测试样例
-        /// </summary>
-        /// <returns></returns>
-        private static void NoAwait()
-        {
-            Test().Forget(); //一定要调用Forget以确保任务被正确回收（在不await和GetResult的情况下）
-        }
-
-        /// <summary>
-        /// 测试样例
-        /// </summary>
-        /// <returns></returns>
-        private static async RwTask Test()
-        {
-            SCHelperUtils.Log(await Test2());
-        }
-
-
-        /// <summary>
-        /// 测试样例
-        /// </summary>
-        /// <returns></returns>
-        private static async RwTask<DateTime> Test2()
-        {
-            SCHelperUtils.Log($"4 - {DateTime.Now}");
-            await RwTask.DelayEarlyFrames(80);
-            SCHelperUtils.Log($"3 - {DateTime.Now}");
-            await RwTask.DelayEarlyFrames(80);
-            SCHelperUtils.Log($"2 - {DateTime.Now}");
-            await RwTask.DelayEarlyFrames(80);
-            SCHelperUtils.Log($"1 - {DateTime.Now}");
-            await RwTask.DelayEarlyFrames(80);
-            return DateTime.Now;
-        }
-
-        private static async void SwitchToRwLoop()
-        {
-            //其他线程操作
-            await RwTask.Yield();
-            //主线程操作
         }
     }
 

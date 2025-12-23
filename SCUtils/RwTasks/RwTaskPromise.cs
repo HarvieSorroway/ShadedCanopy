@@ -55,7 +55,7 @@ namespace SCUtils.RwTasks
             if (_pool.TryPop(out promise)) { }
             else promise = new RwTaskPromise();
             promise._status = RwTaskStatus.Succeeded;
-            promise._isFinished = true;
+            promise._isFinished = true; //防止OnCompleted不执行
             return promise;
         }
 
@@ -66,8 +66,20 @@ namespace SCUtils.RwTasks
             else promise = new RwTaskPromise();
             promise._cancellationToken = token;
             promise._status = RwTaskStatus.Canceled;
-            promise._isFinished = true;
+            promise._isFinished = true; //防止OnCompleted不执行
             promise._exception = new OperationCanceledException(token);
+            return promise;
+        }
+
+
+        public static RwTaskPromise CreateException(Exception ex)
+        {
+            RwTaskPromise promise;
+            if (_pool.TryPop(out promise)) { }
+            else promise = new RwTaskPromise();
+            promise._status = RwTaskStatus.Faulted;
+            promise._isFinished = true; //防止OnCompleted不执行
+            promise._exception = ex;
             return promise;
         }
 
@@ -117,6 +129,7 @@ namespace SCUtils.RwTasks
         public RwTaskStatus GetStatus(short token)
         {
             if (token != _token) return RwTaskStatus.Succeeded;
+            if (!_isFinished) return RwTaskStatus.Pending; //避免在任务完成前被外部调用GetStatus获取到错误的状态
             return _status;
         }
 
@@ -157,10 +170,7 @@ namespace SCUtils.RwTasks
 
             try
             {
-                if (_status is RwTaskStatus.Canceled or RwTaskStatus.Faulted)
-                    ExceptionDispatchInfo.Capture(_exception).Throw();
-
-                if (_status is not RwTaskStatus.Succeeded)
+                if (!_isFinished)
                 {
                     if (SCHelperUtils.IsMainThread)
                         throw new InvalidOperationException("Call GetResult for an uncompleted rwTask in mainThread will cause deadlocked");
@@ -301,7 +311,7 @@ namespace SCUtils.RwTasks
             if (_pool.TryPop(out promise)) { }
             else promise = new RwTaskPromise<T>();
             promise._cancellationToken = cancellationToken;
-            promise._runner = runner;
+            promise._runner = runner ?? RwTaskContext.Current;
             promise._forceNextFrame = forceNextFrame;
             promise.Setup();
             return promise;
@@ -314,6 +324,7 @@ namespace SCUtils.RwTasks
             else promise = new RwTaskPromise<T>();
             promise._result = value;
             promise._status = RwTaskStatus.Succeeded;
+            promise._isFinished = true; //防止OnCompleted不执行
             return promise;
         }
 
@@ -325,6 +336,18 @@ namespace SCUtils.RwTasks
             promise._cancellationToken = token;
             promise._status = RwTaskStatus.Canceled;
             promise._exception = new OperationCanceledException(token);
+            promise._isFinished = true; //防止OnCompleted不执行 
+            return promise;
+        }
+
+        public static RwTaskPromise<T> CreateException(Exception ex)
+        {
+            RwTaskPromise<T> promise;
+            if (_pool.TryPop(out promise)) { }
+            else promise = new RwTaskPromise<T>();
+            promise._status = RwTaskStatus.Faulted;
+            promise._isFinished = true; //防止OnCompleted不执行
+            promise._exception = ex;
             return promise;
         }
 
@@ -378,6 +401,7 @@ namespace SCUtils.RwTasks
         public RwTaskStatus GetStatus(short token)
         {
             if (token != _token) return RwTaskStatus.Succeeded;
+            if (!_isFinished) return RwTaskStatus.Pending; //避免在任务完成前被外部调用GetStatus获取到错误的状态
             return _status;
         }
 
@@ -418,10 +442,7 @@ namespace SCUtils.RwTasks
 
             try
             {
-                if (_status is RwTaskStatus.Canceled or RwTaskStatus.Faulted)
-                    ExceptionDispatchInfo.Capture(_exception).Throw();
-
-                if (_status is not RwTaskStatus.Succeeded)
+                if (!_isFinished)
                 {
                     if (SCHelperUtils.IsMainThread)
                         throw new InvalidOperationException("Call GetResult for an uncompleted rwTask in mainThread will cause deadlocked");
@@ -578,8 +599,8 @@ namespace SCUtils.RwTasks
 
         protected override void Return(RwTaskPromise promise)
         {
-            _pool.Push((RwYieldPromise)promise);
             ((RwYieldPromise)promise).Reset();
+            _pool.Push((RwYieldPromise)promise);
         }
     }
 }

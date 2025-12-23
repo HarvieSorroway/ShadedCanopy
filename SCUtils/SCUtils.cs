@@ -33,9 +33,14 @@ namespace SCUtils
             SCTweenExtension.Test();
         }
 
-        public static void Log(string log)
+        public static void Log(object log)
         {
             logger.LogDebug(log);
+        }
+
+        public static void LogError(object log)
+        {
+            logger.LogError(log);
         }
 
         #region AnimationEasings

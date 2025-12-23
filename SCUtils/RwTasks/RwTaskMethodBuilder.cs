@@ -11,9 +11,6 @@ namespace SCUtils.RwTasks
     internal static class RwTaskContext
     {
         [ThreadStatic] public static RwLoopRunner Current;
-
-        public static void Schedule(IRwTaskSource src)
-            => (Current ?? RwLoopRunner.LateUpdateRunner).Schedule(src);
     }
 
     internal readonly struct RwTaskScope : IDisposable

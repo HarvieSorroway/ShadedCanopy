@@ -55,23 +55,29 @@ namespace ShadedCanopy
             orig.Invoke(self);
             if (inited)
                 return;
+            try
+            {
+                inited = true;
 
-            ShimmerSlugcat.PlayerHooks.Hooks();
-            ShimmerSlugcat.PGraphicHooks.Hooks();
-            FlashingEffectManager.Init();
-            ShimmerSlugcat.ShimmerPlugin.LoadShimmerAsset(self);
-            ScavengerHooks.HooksOn();
-            PlacedObjects.SCPlacedObjects.Init();
-            
-            SCUtils.SCUtils.Init(Logger);
-            SCResources.LoadResources(self);
+                ShimmerSlugcat.PlayerHooks.Hooks();
+                ShimmerSlugcat.PGraphicHooks.Hooks();
+                FlashingEffectManager.Init();
+                ScavengerHooks.HooksOn();
+                PlacedObjects.SCPlacedObjects.Init();
 
-            //ImguiRegister.TryInit();
-            Objects.SCMorningGlory.SCMorningGloryHooks.Hook();
-            Objects.SCMorningGlory.SCMorningGloryTest.HookTest();
+                SCUtils.SCUtils.Init(Logger);
+                SCResources.LoadResources(self);
 
-            SCUtils.SCHelperUtils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");
-            inited = true;
+                //ImguiRegister.TryInit();
+                Objects.SCMorningGlory.SCMorningGloryHooks.Hook();
+                Objects.SCMorningGlory.SCMorningGloryTest.HookTest();
+
+                SCUtils.SCHelperUtils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");
+            }
+            catch (Exception e)
+            {
+                Logger.LogFatal($"Exception during {ModName} RainWorld_OnModsInit: {e}");
+            }
         }
     }
 }

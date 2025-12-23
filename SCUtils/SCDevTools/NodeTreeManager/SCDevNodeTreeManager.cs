@@ -64,9 +64,15 @@ namespace SCUtils.SCDevTools.NodeTreeManager
 
             var handle = new WeakHandle(obj);
             SetVirtualObjForObj(type, obj, handle, attr);
-            SCUtils.Log(" ");
 
-            type2WeakRefsMap[type].Add(handle);
+            try
+            {
+                type2WeakRefsMap[type].Add(handle);
+            }
+            catch (KeyNotFoundException)
+            {
+                SCUtils.Log($"[SCUtils] Track - Type {type.Name} is not registered in NodeTreeTypeInfo!");
+            }
         }
 
         /// <summary>

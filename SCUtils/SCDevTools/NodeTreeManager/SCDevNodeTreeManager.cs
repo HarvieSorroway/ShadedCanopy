@@ -124,7 +124,7 @@ namespace SCUtils.SCDevTools.NodeTreeManager
 
         }
 
-        internal class VirtualObj//持有虚引用的对象
+        public class VirtualObj//持有虚引用的对象
         {
             internal string name;
             internal List<WeakHandle> refs = new List<WeakHandle>();

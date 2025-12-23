@@ -13,6 +13,7 @@ namespace ShadedCanopy.PlacedObjects
         public static void Init()
         {
             PlacedObjectExt.Register(new DeadlyLightExt());
+            PlacedObjectExt.Register(new Objects.SCMorningGlory.SCMorningGloryPlacedObject());
         }
     }
 }

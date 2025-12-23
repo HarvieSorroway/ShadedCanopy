@@ -59,7 +59,7 @@ namespace ShadedCanopy
             ShimmerSlugcat.PlayerHooks.Hooks();
             ShimmerSlugcat.PGraphicHooks.Hooks();
             FlashingEffectManager.Init();
-            
+            ShimmerSlugcat.ShimmerPlugin.LoadShimmerAsset(self);
             ScavengerHooks.HooksOn();
             PlacedObjects.SCPlacedObjects.Init();
             
@@ -67,6 +67,8 @@ namespace ShadedCanopy
             SCResources.LoadResources(self);
 
             //ImguiRegister.TryInit();
+            Objects.SCMorningGlory.SCMorningGloryHooks.Hook();
+            Objects.SCMorningGlory.SCMorningGloryTest.HookTest();
 
             SCUtils.SCHelperUtils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");
             inited = true;

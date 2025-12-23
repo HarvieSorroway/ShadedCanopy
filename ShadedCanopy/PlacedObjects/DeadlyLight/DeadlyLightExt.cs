@@ -23,7 +23,7 @@ namespace ShadedCanopy.PlacedObjects.DeadlyLight
             return new DeadlyLightData(p);
         }
 
-        public IEnumerable<UpdatableAndDeletable> RoomLoaded(Room room, PlacedObject placedObject)
+        public IEnumerable<UpdatableAndDeletable> RoomLoaded(Room room, PlacedObject placedObject, int itemIdx)
         {
             yield return new DeadlyLight(room, placedObject);
         }

@@ -24,11 +24,14 @@ namespace SCUtils.DevToolUtils
         static void Room_Loaded(On.Room.orig_Loaded orig, Room self)
         {
             orig.Invoke(self);
-            foreach (var placed in self.roomSettings.placedObjects)
+            if (self.game == null)
+                return;
+            for(int i = 0; i < self.roomSettings.placedObjects.Count; ++i)
             {
+                PlacedObject placed = self.roomSettings.placedObjects[i];
                 if (extInstances.TryGetValue(placed.type, out var ext))
                 {
-                    foreach(var obj in ext.RoomLoaded(self, placed))
+                    foreach(var obj in ext.RoomLoaded(self, placed, i))
                     {
                         self.AddObject(obj);
                     }
@@ -83,6 +86,6 @@ namespace SCUtils.DevToolUtils
         public ObjectsPage.DevObjectCategories Category { get; }
         public PlacedObject.Data GenerateEmptyData(PlacedObject p);
         public PlacedObjectRepresentation CreateRep(ObjectsPage page, PlacedObject p);
-        public IEnumerable<UpdatableAndDeletable> RoomLoaded(Room room, PlacedObject placedObject);
+        public IEnumerable<UpdatableAndDeletable> RoomLoaded(Room room, PlacedObject placedObject, int itemIdx);
     }
 }

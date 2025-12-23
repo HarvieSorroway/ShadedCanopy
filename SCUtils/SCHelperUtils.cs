@@ -36,11 +36,13 @@ namespace SCUtils
             if (IsMainThread)
             {
                 Debug.Log("[ShadedCanopy] " + msg);
+                SCUtils.Log("[ShadedCanopy] " + msg);
             }
             else
             {
                 await RwTask.Yield();
                 Debug.Log("[ShadedCanopy] " + msg);
+                SCUtils.Log("[ShadedCanopy] " + msg);
             }
             File.AppendAllText(path, msg + "\n");
         }

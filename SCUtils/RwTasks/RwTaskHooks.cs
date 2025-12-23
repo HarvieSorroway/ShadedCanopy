@@ -31,8 +31,11 @@ namespace SCUtils.RwTasks
 
         private static void MainLoopProcess_Update(On.MainLoopProcess.orig_Update orig, MainLoopProcess self)
         {
+            //if(Custom.rainWorld.processManager.currentMainLoop != null)
+                SCUtils.Log($"[RwTaskScope] MainLoopProcess_Update self : {self.ID}");
             if (Custom.rainWorld.processManager.currentMainLoop == self)
             {
+                SCUtils.Log("[RwTaskScope] MainLoopProcess_Update ticking 1");
                 using (new RwTaskScope(RwLoopRunner.EarlyUpdateRunner))
                 {
                     RwLoopRunner.EarlyUpdateRunner.Tick();
@@ -41,6 +44,7 @@ namespace SCUtils.RwTasks
             orig(self);
             if (Custom.rainWorld.processManager.currentMainLoop == self)
             {
+                SCUtils.Log("[RwTaskScope] MainLoopProcess_Update ticking 2");
                 using (new RwTaskScope(RwLoopRunner.LateUpdateRunner))
                 {
                     RwLoopRunner.LateUpdateRunner.Tick();
@@ -58,6 +62,7 @@ namespace SCUtils.RwTasks
             {
                 RwLoopRunner.EarlyRawUpdateRunner.Tick();
             }
+            SCUtils.Log("[RwTaskScope] RainWorld_Update ticking");
             orig(self);
             using (new RwTaskScope(RwLoopRunner.LateRawUpdateRunner))
             {

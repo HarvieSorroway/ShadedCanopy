@@ -106,6 +106,17 @@ namespace SCUtils.RwTasks
         /// <returns>一个包装了当前操作的标准 <see cref="Task{T}"/> 对象。</returns>
         public static Task<T> AsTask<T>(this RwTask<T> task)
         {
+            if (task.IsCompleted)
+            {
+                try
+                {
+                    return Task.FromResult<T>(task.GetAwaiter().GetResult());
+                }
+                catch (Exception ex)
+                {
+                    return Task.FromException<T>(ex);
+                }
+            }
             var tcs = new TaskCompletionSource<T>();
             task.GetAwaiter().OnCompleted(() =>
             {
@@ -129,6 +140,18 @@ namespace SCUtils.RwTasks
         /// <returns>一个包装了当前操作的标准 <see cref="Task"/> 对象。</returns>
         public static Task AsTask(this RwTask task)
         {
+            if (task.IsCompleted)
+            {
+                try
+                {
+                    task.GetAwaiter().GetResult();
+                    return Task.CompletedTask;
+                }
+                catch (Exception ex)
+                {
+                    return Task.FromException(ex);
+                }
+            }
             var tcs = new TaskCompletionSource<bool>();
             task.GetAwaiter().OnCompleted(() =>
             {

@@ -16,9 +16,8 @@ namespace SCUtils.RwTasks
 
         public RwTaskCompletionSource(RwLoopRunner runner = null)
         {
-            runner ??= RwLoopRunner.LateUpdateRunner;
-            _promise = RwTaskPromise<T>.Create(CancellationToken.None);
-            runner.Schedule(_promise);
+            runner ??= RwLoopRunner.LateRawUpdateRunner;
+            _promise = RwTaskPromise<T>.Create(CancellationToken.None, runner);
             _token = _promise.Token;
         }
 
@@ -40,8 +39,7 @@ namespace SCUtils.RwTasks
         public bool TrySetCanceled(CancellationToken token = default)
         {
             if (_promise.GetStatus(_token) != RwTaskStatus.Pending) return false;
-
-            _promise.SetException(new OperationCanceledException(token));
+            _promise.SetCancel(token);
             return true;
         }
 

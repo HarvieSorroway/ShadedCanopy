@@ -18,13 +18,15 @@ namespace SCUtils.RwTasks
 
     internal readonly struct RwTaskScope : IDisposable
     {
+        private readonly RwLoopRunner _last;
         public RwTaskScope(RwLoopRunner runner)
         {
+            _last = RwTaskContext.Current;
             RwTaskContext.Current = runner;
         }
         public void Dispose()
         {
-            RwTaskContext.Current = null;
+            RwTaskContext.Current = _last;
         }
     }
 
@@ -54,9 +56,9 @@ namespace SCUtils.RwTasks
 
                 if (_isCompleted)
                 {
-                    return RwTask.FromeResult();
+                    return RwTask.FromResult();
                 }
-                _promise = RwTaskPromise.Create(0, CancellationToken.None);
+                _promise = RwTaskPromise.Create(CancellationToken.None);
                 return _promise.Task;
             }
         }
@@ -77,7 +79,7 @@ namespace SCUtils.RwTasks
         {
             if (_promise == null)
             {
-                 _promise = RwTaskPromise.Create(0, CancellationToken.None);
+                 _promise = RwTaskPromise.Create(CancellationToken.None);
             }
             _promise.SetException(exception);
         }
@@ -86,7 +88,7 @@ namespace SCUtils.RwTasks
             where TAwaiter : INotifyCompletion
             where TStateMachine : IAsyncStateMachine
         {
-            if (_promise == null) _promise = RwTaskPromise.Create(0, CancellationToken.None);
+            if (_promise == null) _promise = RwTaskPromise.Create(CancellationToken.None);
             awaiter.OnCompleted(stateMachine.MoveNext);
         }
 
@@ -94,7 +96,7 @@ namespace SCUtils.RwTasks
             where TAwaiter : ICriticalNotifyCompletion
             where TStateMachine : IAsyncStateMachine
         {
-            if (_promise == null) _promise = RwTaskPromise.Create(0, CancellationToken.None);
+            if (_promise == null) _promise = RwTaskPromise.Create(CancellationToken.None);
             awaiter.UnsafeOnCompleted(stateMachine.MoveNext);
         }
     }

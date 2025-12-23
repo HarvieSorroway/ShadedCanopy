@@ -1,5 +1,6 @@
 ﻿using RWCustom;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,7 @@ namespace SCUtils.RwTasks
 {
     public static class RwTaskHooks
     {
-        public static readonly Queue<Action> PendingActions = new();
+        public static readonly ConcurrentQueue<Action> PendingActions = new();
 
         public static void Init()
         {
@@ -45,10 +46,10 @@ namespace SCUtils.RwTasks
                     RwLoopRunner.LateUpdateRunner.Tick();
                 }
             }
-            while(PendingActions.Count > 0)
-            {
-                PendingActions.Dequeue().Invoke();
-            }
+            
+            while (PendingActions.TryDequeue(out var action))
+                action?.Invoke();
+            
         }
 
         private static void RainWorld_Update(On.RainWorld.orig_Update orig, RainWorld self)

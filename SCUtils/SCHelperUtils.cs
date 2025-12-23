@@ -25,7 +25,7 @@ namespace SCUtils
             get { return Thread.CurrentThread.ManagedThreadId == _mainThreadId; }
         }
 
-        public static void Log(object msg)
+        public static async void Log(object msg)
         {
             if (!logInit)
             {
@@ -35,11 +35,12 @@ namespace SCUtils
             }
             if (IsMainThread)
             {
-                UnityEngine.Debug.Log("[ShadedCanopy] " + msg);
+                Debug.Log("[ShadedCanopy] " + msg);
             }
             else
             {
-                RwTaskHooks.PendingActions.Enqueue(() => UnityEngine.Debug.Log("[ShadedCanopy] " + msg));
+                await RwTask.Yield();
+                Debug.Log("[ShadedCanopy] " + msg);
             }
             File.AppendAllText(path, msg + "\n");
         }

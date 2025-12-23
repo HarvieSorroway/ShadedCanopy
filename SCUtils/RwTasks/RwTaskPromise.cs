@@ -28,12 +28,14 @@ namespace SCUtils.RwTasks
         T GetResult(short token);
     }
 
+
+
     public class RwTaskPromise : IRwTaskSourceVoid
     {
         private static readonly Stack<RwTaskPromise> _pool = new Stack<RwTaskPromise>();
         private static object _poolLock = new();
 
-        public static RwTaskPromise Create(int delayCount, CancellationToken cancellationToken)
+        public static RwTaskPromise Create(CancellationToken cancellationToken = default, RwLoopRunner runner = null, bool forceNextFrame = false)
         {
             RwTaskPromise promise;
             lock (_poolLock)
@@ -42,9 +44,12 @@ namespace SCUtils.RwTasks
                 else promise = new RwTaskPromise();
             }
             promise._cancellationToken = cancellationToken;
-            promise._remainingFrames = delayCount;
+            promise._runner = runner;
+            promise._forceNextFrame = forceNextFrame;
+            promise.Setup();
             return promise;
         }
+
 
         public static RwTaskPromise CreateCompleted()
         {
@@ -68,6 +73,7 @@ namespace SCUtils.RwTasks
             }
             promise._cancellationToken = token;
             promise._status = RwTaskStatus.Canceled;
+            promise._exception = new OperationCanceledException(token);
             return promise;
         }
 
@@ -81,24 +87,30 @@ namespace SCUtils.RwTasks
         }
 
 
-        private Action _continuation;
-        private Exception _exception;
-        private ManualResetEventSlim _waitEv;
-        private RwTaskStatus _status;
-        private CancellationToken _cancellationToken;
-        private int _remainingFrames;
-        private short _token;
-        private IRwTaskSource _nextNode;
-        private bool _isFinished;
+        protected Action _continuation;
+        protected RwLoopRunner _runner;
+        protected Exception _exception;
+        protected ManualResetEventSlim _waitEv;
+        protected RwTaskStatus _status;
+        protected CancellationToken _cancellationToken;
+        protected short _token;
+        protected IRwTaskSource _nextNode;
+        protected bool _isFinished;
+        protected bool _forceNextFrame;
+        protected CancellationTokenRegistration _ctr;
 
-        private RwTaskPromise()
+        protected RwTaskPromise()
         {
             _token = 0;
             _status = RwTaskStatus.Pending;
         }
 
-
-        public bool Execute()
+        protected void Setup()
+        {
+            _ctr = _cancellationToken.Register(() => SetCancel());
+        }
+ 
+        public virtual bool Execute()
         {
             if (_isFinished) return true;
 
@@ -106,24 +118,6 @@ namespace SCUtils.RwTasks
             {
                 return Finish();
             }
-
-            if (_cancellationToken.IsCancellationRequested)
-            {
-                _status = RwTaskStatus.Canceled;
-                SetException(new OperationCanceledException(_cancellationToken));
-                return Finish();
-            }
-
-            if (_remainingFrames == -1)
-            {
-                return RwTaskStatus.Succeeded == _status;
-            }
-            if(_remainingFrames-- == 0)
-            {
-                _status = RwTaskStatus.Succeeded;
-                return Finish();
-            }
-
             return false;
       
         }
@@ -145,7 +139,10 @@ namespace SCUtils.RwTasks
             }
             Action wrappedAction = continuation;
             var capturedContext = ExecutionContext.Capture();
-            wrappedAction = () => ExecutionContext.Run(capturedContext, _ => continuation(), null);
+            if (capturedContext is null)
+                wrappedAction = continuation;
+            else
+                wrappedAction = () => ExecutionContext.Run(capturedContext, _ => continuation(), null);
 
             var oldContinuation = Interlocked.CompareExchange(ref _continuation, wrappedAction, null);
 
@@ -165,10 +162,10 @@ namespace SCUtils.RwTasks
 
         public void GetResult(short token)
         {
+            if (token != _token) throw new InvalidOperationException();
+
             try
             {
-                if (token != _token) throw new InvalidOperationException();
-
                 if (_status is RwTaskStatus.Canceled or RwTaskStatus.Faulted)
                     ExceptionDispatchInfo.Capture(_exception).Throw();
 
@@ -209,7 +206,7 @@ namespace SCUtils.RwTasks
             }
         }
 
-        private void Reset()
+        protected virtual void Reset()
         {
             _continuation = null;
             _status = RwTaskStatus.Pending;
@@ -218,9 +215,13 @@ namespace SCUtils.RwTasks
             _exception = null;
             try { _waitEv?.Dispose(); } catch { }
             _waitEv = null;
+            _exception = null;
+            _runner = null;
+            _forceNextFrame = false;
+            _ctr.Dispose();
+            _cancellationToken = CancellationToken.None;
             _token++; 
         }
-
         public void SetException(Exception ex)
         {
             lock (this)
@@ -229,11 +230,20 @@ namespace SCUtils.RwTasks
                 _exception = ex;
                 _status = RwTaskStatus.Faulted;
             }
-            if (RwTaskContext.Current != null) //在同步上下文
-            {
-                Finish();
-            }
+            TriggerCompletion();
         }
+
+        public void SetCancel(CancellationToken? token = null)
+        {
+            lock (this)
+            {
+                if (_status != RwTaskStatus.Pending) return;
+                _exception = new OperationCanceledException(token ?? _cancellationToken);
+                _status = RwTaskStatus.Canceled;
+            }
+            TriggerCompletion();
+        }
+
         public void SetResult()
         {
             lock (this)
@@ -241,11 +251,9 @@ namespace SCUtils.RwTasks
                 if (_status != RwTaskStatus.Pending) return;
                 _status = RwTaskStatus.Succeeded;
             }
-            if (RwTaskContext.Current != null) //在同步上下文
-            {
-                Finish();
-            }
+            TriggerCompletion();
         }
+
         private bool Finish()
         {
             _isFinished = true;
@@ -259,6 +267,29 @@ namespace SCUtils.RwTasks
                 ev.Dispose();
             }
             return true;
+        }
+
+        private void TriggerCompletion()
+        {
+            if (_forceNextFrame)
+            {
+                (_runner ?? RwLoopRunner.DefaultRunner).Schedule(this);
+            }
+            else
+            {
+                if (_runner != null && _runner != RwTaskContext.Current)
+                {
+                    _runner.Schedule(this);
+                }
+                else if (RwTaskContext.Current != null)
+                {
+                    Finish();
+                }
+                else
+                {
+                    RwLoopRunner.DefaultRunner.Schedule(this);
+                }
+            }
         }
 
         internal short Token => _token;
@@ -275,7 +306,7 @@ namespace SCUtils.RwTasks
         private static object _poolLock = new();
 
 
-        public static RwTaskPromise<T> Create(CancellationToken cancellationToken)
+        public static RwTaskPromise<T> Create(CancellationToken cancellationToken = default, RwLoopRunner runner = null, bool forceNextFrame = false)
         {
             RwTaskPromise<T> promise;
             lock (_poolLock)
@@ -284,6 +315,9 @@ namespace SCUtils.RwTasks
                 else promise = new RwTaskPromise<T>();
             }
             promise._cancellationToken = cancellationToken;
+            promise._runner = runner;
+            promise._forceNextFrame = forceNextFrame;
+            promise.Setup();
             return promise;
         }
 
@@ -309,6 +343,7 @@ namespace SCUtils.RwTasks
             }
             promise._cancellationToken = token;
             promise._status = RwTaskStatus.Canceled;
+            promise._exception = new OperationCanceledException(token);
             return promise;
         }
 
@@ -323,6 +358,7 @@ namespace SCUtils.RwTasks
 
 
         private Action _continuation;
+        private RwLoopRunner _runner;
         private Exception _exception;
         private ManualResetEventSlim _waitEv;
         private T _result;
@@ -331,6 +367,8 @@ namespace SCUtils.RwTasks
         private short _token;
         private IRwTaskSource _nextNode;
         private bool _isFinished;
+        private bool _forceNextFrame;
+        private CancellationTokenRegistration _ctr;
 
         private RwTaskPromise()
         {
@@ -339,23 +377,18 @@ namespace SCUtils.RwTasks
         }
 
 
-        public bool Execute()
+
+        private void Setup()
+        {
+            _ctr = _cancellationToken.Register(() => SetCancel());
+        }
+
+
+        public virtual bool Execute()
         {
             if (_isFinished) return true;
 
             if (_status != RwTaskStatus.Pending)
-            {
-                return Finish();
-            }
-
-            if (_cancellationToken.IsCancellationRequested)
-            {
-                _status = RwTaskStatus.Canceled;
-                SetException(new OperationCanceledException(_cancellationToken));
-                return Finish();
-            }
-
-            if (_status == RwTaskStatus.Succeeded)
             {
                 return Finish();
             }
@@ -380,7 +413,10 @@ namespace SCUtils.RwTasks
             }
             Action wrappedAction = continuation;
             var capturedContext = ExecutionContext.Capture();
-            wrappedAction = () => ExecutionContext.Run(capturedContext, _ => continuation(), null);
+            if (capturedContext is null)
+                wrappedAction = continuation;
+            else
+                wrappedAction = () => ExecutionContext.Run(capturedContext, _ => continuation(), null);
 
             var oldContinuation = Interlocked.CompareExchange(ref _continuation, wrappedAction, null);
 
@@ -400,10 +436,10 @@ namespace SCUtils.RwTasks
 
         public T GetResult(short token)
         {
+            if (token != _token) throw new InvalidOperationException();
+
             try
             {
-                if (token != _token) throw new InvalidOperationException();
-
                 if (_status is RwTaskStatus.Canceled or RwTaskStatus.Faulted)
                     ExceptionDispatchInfo.Capture(_exception).Throw();
 
@@ -454,7 +490,11 @@ namespace SCUtils.RwTasks
             _nextNode = null;
             try { _waitEv?.Dispose(); } catch { }
             _waitEv = null;
+            _exception = null;
+            _runner = null;
+            _cancellationToken = CancellationToken.None;
             _isFinished = false;
+            _ctr.Dispose();
             _token++;
         }
 
@@ -466,11 +506,7 @@ namespace SCUtils.RwTasks
                 _exception = ex;
                 _status = RwTaskStatus.Faulted;
             }
-
-            if (RwTaskContext.Current != null) //在同步上下文
-            {
-                Finish();
-            }
+            TriggerCompletion();
         }
 
         public void SetResult(T result)
@@ -481,10 +517,18 @@ namespace SCUtils.RwTasks
                 _result = result;
                 _status = RwTaskStatus.Succeeded;
             }
-            if (RwTaskContext.Current != null) //在同步上下文
+            TriggerCompletion();
+        }
+
+        public void SetCancel(CancellationToken? token = null)
+        {
+            lock (this)
             {
-                Finish();
+                if (_status != RwTaskStatus.Pending) return;
+                _exception = new OperationCanceledException(token ?? _cancellationToken);
+                _status = RwTaskStatus.Canceled;
             }
+            TriggerCompletion();
         }
 
         private bool Finish()
@@ -502,10 +546,60 @@ namespace SCUtils.RwTasks
             return true;
         }
 
+        private void TriggerCompletion()
+        {
+            if (_forceNextFrame)
+            {
+                (_runner ?? RwLoopRunner.DefaultRunner).Schedule(this);
+            }
+            else
+            {
+                if (_runner != null && _runner != RwTaskContext.Current)
+                {
+                    _runner.Schedule(this);
+                }
+                else if (RwTaskContext.Current != null)
+                {
+                    Finish();
+                }
+                else
+                {
+                    RwLoopRunner.DefaultRunner.Schedule(this);
+                }
+            }
+        }
         internal short Token => _token;
 
         public RwTask<T> Task => new RwTask<T>(this, _token);
 
         public ref IRwTaskSource NextNode => ref _nextNode;
+    }
+
+    public class RwYieldPromise : RwTaskPromise
+    {
+        private static readonly Stack<RwYieldPromise> _pool = new Stack<RwYieldPromise>();
+        private static object _poolLock = new();
+
+        public static RwTaskPromise CreateYield(CancellationToken cancellationToken = default, RwLoopRunner runner = null)
+        {
+            RwYieldPromise promise;
+            lock (_poolLock)
+            {
+                if (_pool.Count > 0) promise = _pool.Pop();
+                else promise = new RwYieldPromise();
+            }
+            promise._cancellationToken = cancellationToken;
+            promise._runner = runner;
+            promise._forceNextFrame = true;
+            promise.Setup();
+            (runner ?? RwLoopRunner.DefaultRunner).Schedule(promise);
+            return promise;
+        }
+
+        public override bool Execute()
+        {
+            _status = RwTaskStatus.Succeeded;
+            return base.Execute();
+        }
     }
 }

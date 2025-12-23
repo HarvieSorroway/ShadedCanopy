@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -36,24 +37,24 @@ namespace SCUtils.RwTasks
         /// <summary>
         /// 延迟指定的帧数，并在 Update 结束阶段恢复执行。
         /// </summary>
-        /// <param name="frame">要延迟的帧数。</param>
+        /// <param name="frames">要延迟的帧数。</param>
         /// <param name="token">取消令牌，用于取消等待。</param>
-        public static RwTask DelayFrames(int frame, CancellationToken token = default)
+        public static RwTask DelayFrames(int frames, CancellationToken token = default)
         {
-            var promise = RwTaskPromise.Create(frame, token);
-            RwLoopRunner.LateUpdateRunner.Schedule(promise);
+            var promise = RwTaskPromise.Create(token, RwLoopRunner.LateUpdateRunner);
+            RwLoopRunner.LateUpdateRunner.ScheduleDelayFrames(promise, frames);
             return promise.Task;
         }
 
         /// <summary>
         /// 延迟指定的帧数，并在 Update 开始阶段恢复执行。
         /// </summary>
-        /// <param name="frame">要延迟的帧数。</param>
+        /// <param name="frames">要延迟的帧数。</param>
         /// <param name="token">取消令牌，用于取消等待。</param>
-        public static RwTask DelayEarlyFrames(int frame, CancellationToken token = default)
+        public static RwTask DelayEarlyFrames(int frames, CancellationToken token = default)
         {
-            var promise = RwTaskPromise.Create(frame, token);
-            RwLoopRunner.EarlyUpdateRunner.Schedule(promise);
+            var promise = RwTaskPromise.Create(token, RwLoopRunner.EarlyUpdateRunner);
+            RwLoopRunner.EarlyUpdateRunner.ScheduleDelayFrames(promise, frames);
             return promise.Task;
         }
 
@@ -61,12 +62,12 @@ namespace SCUtils.RwTasks
         /// 延迟指定的帧数，并在 RawUpdate 结束阶段恢复执行。
         /// <para>适用于不受rw帧速率影响速度的逻辑。</para>
         /// </summary>
-        /// <param name="frame">要延迟的帧数。</param>
+        /// <param name="frames">要延迟的帧数。</param>
         /// <param name="token">取消令牌，用于取消等待。</param>
-        public static RwTask DelayRawFrames(int frame, CancellationToken token = default)
+        public static RwTask DelayRawFrames(int frames, CancellationToken token = default)
         {
-            var promise = RwTaskPromise.Create(frame, token);
-            RwLoopRunner.LateRawUpdateRunner.Schedule(promise);
+            var promise = RwTaskPromise.Create(token, RwLoopRunner.LateRawUpdateRunner);
+            RwLoopRunner.LateRawUpdateRunner.ScheduleDelayFrames(promise, frames);
             return promise.Task;
         }
 
@@ -74,12 +75,63 @@ namespace SCUtils.RwTasks
         /// 延迟指定的帧数，并在 RawUpdate 开始阶段恢复执行。
         /// <para>适用于不受rw帧速率影响速度的逻辑。</para>
         /// </summary>
-        /// <param name="frame">要延迟的帧数。</param>
+        /// <param name="frames">要延迟的帧数。</param>
         /// <param name="token">取消令牌，用于取消等待。</param>
-        public static RwTask DelayEarlyRawFrames(int frame, CancellationToken token = default)
+        public static RwTask DelayEarlyRawFrames(int frames, CancellationToken token = default)
         {
-            var promise = RwTaskPromise.Create(frame, token);
-            RwLoopRunner.EarlyRawUpdateRunner.Schedule(promise);
+            var promise = RwTaskPromise.Create(token, RwLoopRunner.EarlyRawUpdateRunner);
+            RwLoopRunner.EarlyRawUpdateRunner.ScheduleDelayFrames(promise, frames);
+            return promise.Task;
+        }
+
+
+        /// <summary>
+        /// 延迟指定的秒数，并在 Update 结束阶段恢复执行。
+        /// </summary>
+        /// <param name="seconds">要延迟的秒数。</param>
+        /// <param name="token">取消令牌，用于取消等待。</param>
+        public static RwTask DelaySeconds(float seconds, CancellationToken token = default)
+        {
+            var promise = RwTaskPromise.Create(token, RwLoopRunner.LateUpdateRunner);
+            RwLoopRunner.LateUpdateRunner.ScheduleDelaySeconds(promise, seconds);
+            return promise.Task;
+        }
+
+        /// <summary>
+        /// 延迟指定的秒数，并在 Update 开始阶段恢复执行。
+        /// </summary>
+        /// <param name="seconds">要延迟的秒数。</param>
+        /// <param name="token">取消令牌，用于取消等待。</param>
+        public static RwTask DelayEarlySeconds(float seconds, CancellationToken token = default)
+        {
+            var promise = RwTaskPromise.Create(token, RwLoopRunner.EarlyUpdateRunner);
+            RwLoopRunner.EarlyUpdateRunner.ScheduleDelaySeconds(promise, seconds);
+            return promise.Task;
+        }
+
+        /// <summary>
+        /// 延迟指定的秒数，并在 RawUpdate 结束阶段恢复执行。
+        /// <para>适用于不受rw帧速率影响速度的逻辑。</para>
+        /// </summary>
+        /// <param name="seconds">要延迟的秒数。</param>
+        /// <param name="token">取消令牌，用于取消等待。</param>
+        public static RwTask DelayRawSeconds(float seconds, CancellationToken token = default)
+        {
+            var promise = RwTaskPromise.Create(token, RwLoopRunner.LateRawUpdateRunner);
+            RwLoopRunner.LateRawUpdateRunner.ScheduleDelaySeconds(promise, seconds);
+            return promise.Task;
+        }
+
+        /// <summary>
+        /// 延迟指定的秒数，并在 RawUpdate 开始阶段恢复执行。
+        /// <para>适用于不受rw帧速率影响速度的逻辑。</para>
+        /// </summary>
+        /// <param name="seconds">要延迟的秒数。</param>
+        /// <param name="token">取消令牌，用于取消等待。</param>
+        public static RwTask DelayEarlyRawSeconds(float seconds, CancellationToken token = default)
+        {
+            var promise = RwTaskPromise.Create(token, RwLoopRunner.EarlyRawUpdateRunner);
+            RwLoopRunner.EarlyRawUpdateRunner.ScheduleDelaySeconds(promise, seconds);
             return promise.Task;
         }
 
@@ -89,8 +141,7 @@ namespace SCUtils.RwTasks
         /// <param name="token">取消令牌。</param>
         public static RwTask YieldEarly(CancellationToken token = default)
         {
-            var promise = RwTaskPromise.Create(1, token);
-            RwLoopRunner.EarlyUpdateRunner.Schedule(promise);
+            var promise = RwYieldPromise.CreateYield(token, RwLoopRunner.EarlyUpdateRunner);
             return promise.Task;
         }
 
@@ -100,8 +151,7 @@ namespace SCUtils.RwTasks
         /// <param name="token">取消令牌。</param>
         public static RwTask Yield(CancellationToken token = default)
         {
-            var promise = RwTaskPromise.Create(1, token);
-            RwLoopRunner.LateUpdateRunner.Schedule(promise);
+            var promise = RwYieldPromise.CreateYield(token, RwLoopRunner.LateUpdateRunner);
             return promise.Task;
         }
 
@@ -111,8 +161,7 @@ namespace SCUtils.RwTasks
         /// <param name="token">取消令牌。</param>
         public static RwTask YieldEarlyRaw(CancellationToken token = default)
         {
-            var promise = RwTaskPromise.Create(1, token);
-            RwLoopRunner.EarlyRawUpdateRunner.Schedule(promise);
+            var promise = RwYieldPromise.CreateYield(token, RwLoopRunner.EarlyRawUpdateRunner);
             return promise.Task;
         }
 
@@ -122,8 +171,7 @@ namespace SCUtils.RwTasks
         /// <param name="token">取消令牌。</param>
         public static RwTask YieldRaw(CancellationToken token = default)
         {
-            var promise = RwTaskPromise.Create(1, token);
-            RwLoopRunner.LateRawUpdateRunner.Schedule(promise);
+            var promise = RwYieldPromise.CreateYield(token, RwLoopRunner.LateRawUpdateRunner);
             return promise.Task;
         }
 
@@ -145,7 +193,7 @@ namespace SCUtils.RwTasks
         /// 无限期挂起，直到传入的 CancellationToken 被取消。
         /// </summary>
         public static RwTask WaitCanceled(CancellationToken token)
-            => DelayFrames(-1, token);
+            => RwTaskPromise.Create(token).Task;
 
         /// <summary>
         /// 无限期挂起，直到传入的 CancellationTokenSource 被取消。
@@ -198,7 +246,7 @@ namespace SCUtils.RwTasks
             var tcs = new RwTaskCompletionSource<bool>();
             int remaining = tasks.Length;
             bool hasError = false;
-            List<Exception> exceptions = null;
+            ConcurrentBag<Exception> exceptions = null;
             foreach (var task in span)
             {
                 task.GetAwaiter().OnCompleted(() =>
@@ -212,7 +260,7 @@ namespace SCUtils.RwTasks
                         Volatile.Write(ref hasError, true);
                         if (exceptions == null)
                         {
-                            exceptions = new List<Exception>();
+                            exceptions = new ConcurrentBag<Exception>();
                         }
                         exceptions.Add(ex);
                     }
@@ -246,23 +294,25 @@ namespace SCUtils.RwTasks
             var tcs = new RwTaskCompletionSource<T[]>();
             int remaining = span.Length;
             bool hasError = false;
-            List<Exception> exceptions = null;
+            ConcurrentBag<Exception> exceptions = null;
             T[] results = new T[span.Length];
-            foreach (var task in span)
+            for (int i = 0; i < span.Length; i++)
             {
+                var idx = i;
+                var task = span[i];
                 task.GetAwaiter().OnCompleted(() =>
                 {
                     try
                     {
                         var result = task.GetAwaiter().GetResult();
-                        results[span.Length - remaining] = result;
+                        results[idx] = result;
                     }
                     catch (Exception ex)
                     {
                         Volatile.Write(ref hasError, true);
                         if (exceptions == null)
                         {
-                            exceptions = new List<Exception>();
+                            exceptions = new ConcurrentBag<Exception>();
                         }
                         exceptions.Add(ex);
                     }
@@ -423,7 +473,7 @@ namespace SCUtils.RwTasks
 
         /// <summary>
         /// 创建一个已成功完成的任务。
-        public static RwTask FromeResult()
+        public static RwTask FromResult()
         {
             var promise = RwTaskPromise.CreateCompleted();
             return promise.Task;

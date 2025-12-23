@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.ExceptionServices;
@@ -32,19 +33,16 @@ namespace SCUtils.RwTasks
 
     public class RwTaskPromise : IRwTaskSourceVoid
     {
-        private static readonly Stack<RwTaskPromise> _pool = new Stack<RwTaskPromise>();
-        private static object _poolLock = new();
+        private static readonly ConcurrentStack<RwTaskPromise> _pool = new ConcurrentStack<RwTaskPromise>();
+   
 
         public static RwTaskPromise Create(CancellationToken cancellationToken = default, RwLoopRunner runner = null, bool forceNextFrame = false)
         {
             RwTaskPromise promise;
-            lock (_poolLock)
-            {
-                if (_pool.Count > 0) promise = _pool.Pop();
-                else promise = new RwTaskPromise();
-            }
+            if (_pool.TryPop(out promise))   { }
+            else promise = new RwTaskPromise();   
             promise._cancellationToken = cancellationToken;
-            promise._runner = runner;
+            promise._runner = runner ?? RwTaskContext.Current;
             promise._forceNextFrame = forceNextFrame;
             promise.Setup();
             return promise;
@@ -54,36 +52,29 @@ namespace SCUtils.RwTasks
         public static RwTaskPromise CreateCompleted()
         {
             RwTaskPromise promise;
-            lock (_poolLock)
-            {
-                if (_pool.Count > 0) promise = _pool.Pop();
-                else promise = new RwTaskPromise();
-            }
+            if (_pool.TryPop(out promise)) { }
+            else promise = new RwTaskPromise();
             promise._status = RwTaskStatus.Succeeded;
+            promise._isFinished = true;
             return promise;
         }
 
         public static RwTaskPromise CreateCanceled(CancellationToken token)
         {
             RwTaskPromise promise;
-            lock (_poolLock)
-            {
-                if (_pool.Count > 0) promise = _pool.Pop();
-                else promise = new RwTaskPromise();
-            }
+            if (_pool.TryPop(out promise)) { }
+            else promise = new RwTaskPromise();
             promise._cancellationToken = token;
             promise._status = RwTaskStatus.Canceled;
+            promise._isFinished = true;
             promise._exception = new OperationCanceledException(token);
             return promise;
         }
 
-        private static void Return(RwTaskPromise promise)
+        protected virtual void Return(RwTaskPromise promise)
         {
             promise.Reset();
-            lock (_poolLock)
-            {
-                _pool.Push(promise);
-            }
+            _pool.Push(promise);
         }
 
 
@@ -218,7 +209,6 @@ namespace SCUtils.RwTasks
             _exception = null;
             _runner = null;
             _forceNextFrame = false;
-            _ctr.Dispose();
             _cancellationToken = CancellationToken.None;
             _token++; 
         }
@@ -259,7 +249,7 @@ namespace SCUtils.RwTasks
             _isFinished = true;
             var cont = Interlocked.Exchange(ref _continuation, null);
             cont?.Invoke();
-
+            _ctr.Dispose();
             var ev = Interlocked.Exchange(ref _waitEv, null);
             if (ev != null)
             {
@@ -302,18 +292,14 @@ namespace SCUtils.RwTasks
 
     public class RwTaskPromise<T> : IRwTaskSource<T>
     {
-        private static readonly Stack<RwTaskPromise<T>> _pool = new Stack<RwTaskPromise<T>>();
-        private static object _poolLock = new();
+        private static readonly ConcurrentStack<RwTaskPromise<T>> _pool = new ConcurrentStack<RwTaskPromise<T>>();
 
 
         public static RwTaskPromise<T> Create(CancellationToken cancellationToken = default, RwLoopRunner runner = null, bool forceNextFrame = false)
         {
             RwTaskPromise<T> promise;
-            lock (_poolLock)
-            {
-                if (_pool.Count > 0) promise = _pool.Pop();
-                else promise = new RwTaskPromise<T>();
-            }
+            if (_pool.TryPop(out promise)) { }
+            else promise = new RwTaskPromise<T>();
             promise._cancellationToken = cancellationToken;
             promise._runner = runner;
             promise._forceNextFrame = forceNextFrame;
@@ -321,14 +307,12 @@ namespace SCUtils.RwTasks
             return promise;
         }
 
-        public static RwTaskPromise<T> CreateCompleted()
+        public static RwTaskPromise<T> CreateCompleted(T value)
         {
             RwTaskPromise<T> promise;
-            lock (_poolLock)
-            {
-                if (_pool.Count > 0) promise = _pool.Pop();
-                else promise = new RwTaskPromise<T>();
-            }
+            if (_pool.TryPop(out promise)) { }
+            else promise = new RwTaskPromise<T>();
+            promise._result = value;
             promise._status = RwTaskStatus.Succeeded;
             return promise;
         }
@@ -336,24 +320,18 @@ namespace SCUtils.RwTasks
         public static RwTaskPromise<T> CreateCanceled(CancellationToken token)
         {
             RwTaskPromise<T> promise;
-            lock (_poolLock)
-            {
-                if (_pool.Count > 0) promise = _pool.Pop();
-                else promise = new RwTaskPromise<T>();
-            }
+            if (_pool.TryPop(out promise)) { }
+            else promise = new RwTaskPromise<T>();
             promise._cancellationToken = token;
             promise._status = RwTaskStatus.Canceled;
             promise._exception = new OperationCanceledException(token);
             return promise;
         }
 
-        private static void Return(RwTaskPromise<T> promise)
+        protected virtual void Return(RwTaskPromise<T> promise)
         {
             promise.Reset();
-            lock (_poolLock)
-            {
-                _pool.Push(promise);
-            }
+            _pool.Push(promise);
         }
 
 
@@ -494,7 +472,6 @@ namespace SCUtils.RwTasks
             _runner = null;
             _cancellationToken = CancellationToken.None;
             _isFinished = false;
-            _ctr.Dispose();
             _token++;
         }
 
@@ -534,6 +511,7 @@ namespace SCUtils.RwTasks
         private bool Finish()
         {
             _isFinished = true;
+            _ctr.Dispose();
             var cont = Interlocked.Exchange(ref _continuation, null);
             cont?.Invoke();
 
@@ -577,17 +555,13 @@ namespace SCUtils.RwTasks
 
     public class RwYieldPromise : RwTaskPromise
     {
-        private static readonly Stack<RwYieldPromise> _pool = new Stack<RwYieldPromise>();
-        private static object _poolLock = new();
+        private static readonly ConcurrentStack<RwYieldPromise> _pool = new ConcurrentStack<RwYieldPromise>();
 
         public static RwTaskPromise CreateYield(CancellationToken cancellationToken = default, RwLoopRunner runner = null)
         {
             RwYieldPromise promise;
-            lock (_poolLock)
-            {
-                if (_pool.Count > 0) promise = _pool.Pop();
-                else promise = new RwYieldPromise();
-            }
+            if (_pool.TryPop(out promise)) { }
+            else promise = new RwYieldPromise();
             promise._cancellationToken = cancellationToken;
             promise._runner = runner;
             promise._forceNextFrame = true;
@@ -600,6 +574,12 @@ namespace SCUtils.RwTasks
         {
             _status = RwTaskStatus.Succeeded;
             return base.Execute();
+        }
+
+        protected override void Return(RwTaskPromise promise)
+        {
+            _pool.Push((RwYieldPromise)promise);
+            ((RwYieldPromise)promise).Reset();
         }
     }
 }

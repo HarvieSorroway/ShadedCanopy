@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace SCUtils.SCTween
 {
@@ -12,11 +13,21 @@ namespace SCUtils.SCTween
     {
         public virtual async RwTask RunAsync()
         {
+            this.setTargetFunc = setTargetFunc;
+            this.valueFrom = from;
+            this.valueTo = to;
+            this.frames = frames;
+            this.finishCallBack = null;
+            this.easeFunc = null;
+            this.lerpFunc = lerpFunc;
+            _finished = false;
+            i = 0;
+            loop = looped = -1;
         }
     }
 
     public class SCTweenContext<T> : SCTweenContextBase
-    {
+        {
         public readonly StrongBox<T> boxedTarget;
         public readonly T From, To;
         public int frames;
@@ -50,18 +61,47 @@ namespace SCUtils.SCTween
             this.finishCallBack = finishCallBack;
             return this;
         }
-
+        
         public override async RwTask RunAsync()
-        {
-            for(int i = 0; i <= frames; i++)
             {
+            for(int i = 0; i <= frames; i++)
+                {
                 float t = (float)i / frames;
                 if (easeFunction != null)
                     t = easeFunction(t);
                 boxedTarget.Value = lerpFunction(From, To, t);
-                await RwTasks.RwTask.Yield();
-            }
+                    await RwTasks.RwTask.Yield();
+                }
+                SCHelperUtils.Log($"Tween {typeof(T).Name} Complete at {DateTime.Now}, value : {lerpFunc.Invoke(valueFrom, valueTo, 1f)}");
+            } while ((loop > 0 && looped < loop));
+
+            _finished = true;
             finishCallBack?.Invoke();
+        }
+
+        /// <summary>
+        /// 同步方法，需要手动调用以推进动画。你真的会需要用这个吗？
+        /// </summary>
+        public void Run()
+        {
+            i++;
+            float t = (i + 1) / (float)frames;
+            if (easeFunc != null)
+                t = easeFunc.Invoke(t);
+
+            setTargetFunc.Invoke(lerpFunc.Invoke(valueFrom, valueTo, t));
+
+            if (i >= frames)
+            {
+                looped++;
+                if (loop < 0 || looped < loop)
+                    i = 0;
+                else
+                {
+                    _finished = true;
+                    finishCallBack?.Invoke();
+                }
+            }
         }
     }
 }

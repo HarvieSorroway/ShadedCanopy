@@ -38,6 +38,11 @@ namespace SCUtils
             logger.LogDebug(log);
         }
 
+        public static void LogError(object log)
+        {
+            logger.LogError(log);
+        }
+
         #region AnimationEasings
         public static float LerpEase(float t)
         {

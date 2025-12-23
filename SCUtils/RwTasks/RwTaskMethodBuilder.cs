@@ -11,9 +11,6 @@ namespace SCUtils.RwTasks
     internal static class RwTaskContext
     {
         [ThreadStatic] public static RwLoopRunner Current;
-
-        public static void Schedule(IRwTaskSource src)
-            => (Current ?? RwLoopRunner.LateUpdateRunner).Schedule(src);
     }
 
     internal readonly struct RwTaskScope : IDisposable
@@ -128,7 +125,7 @@ namespace SCUtils.RwTasks
 
                 if (_hasResult)
                 {
-                    return new RwTask<T>(_result);
+                    return RwTask.FromResult<T>(_result);
                 }
 
                 _promise = RwTaskPromise<T>.Create(CancellationToken.None);

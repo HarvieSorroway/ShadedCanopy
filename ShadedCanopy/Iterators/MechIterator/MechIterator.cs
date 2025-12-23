@@ -1,4 +1,7 @@
-﻿using SCUtils.SCDevTools.NodeTreeManager;
+﻿using SCUtils;
+using SCUtils.SCDevTools.NodeTreeManager;
+using SCUtils.SCTween;
+using SCUtils.RwTasks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,6 +35,11 @@ namespace ShadedCanopy.Iterators.MechIterator
             room.AddObject(lightSource);
 
             SCDevNodeTreeManager.Track(this);
+
+            pos.TweenVector2(new Vector2(500f, 400f), new Vector2(800f, 400f), 3f)
+                .SetEase(SCHelperUtils.EaseInOutCubic)
+                .RunAsync()
+                .Forget();
         }
 
         public override void Update(bool eu)

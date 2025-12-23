@@ -168,6 +168,78 @@ namespace SCUtils.RwTasks
             return tcs.Task;
         }
 
+
+        /// <summary>
+        /// 将当前的 <see cref="Task{T}"/> 转换为 <see cref="RwTask{T}"/>。
+        /// </summary>
+        /// <typeparam name="T">任务结果的类型。</typeparam>
+        /// <param name="task">要转换的 RwTask 实例。</param>
+        /// <returns>一个包装了当前操作的<see cref="RwTask{T}"/> 对象。</returns>
+        public static RwTask<T> AsRwTask<T>(this Task<T> task)
+        {
+            if (task.IsCompleted)
+            {
+                try
+                {
+                    return RwTask.FromResult<T>(task.GetAwaiter().GetResult());
+                }
+                catch (Exception ex)
+                {
+                    return RwTask.FromException<T>(ex);
+                }
+            }
+            var tcs = new RwTaskCompletionSource<T>();
+            task.GetAwaiter().OnCompleted(() =>
+            {
+                try
+                {
+                    var result = task.GetAwaiter().GetResult();
+                    tcs.TrySetResult(result);
+                }
+                catch (Exception ex)
+                {
+                    tcs.TrySetException(ex);
+                }
+            });
+            return tcs.Task;
+        }
+
+
+        /// <summary>
+        /// 将当前的 <see cref="Task"/> 转换为<see cref="RwTask"/>。
+        /// </summary>
+        /// <param name="task">要转换的 Task 实例。</param>
+        /// <returns>一个包装了当前操作的标准 <see cref="Task"/> 对象。</returns>
+        public static RwTask AsRwTask(this Task task)
+        {
+            if (task.IsCompleted)
+            {
+                try
+                {
+                    task.GetAwaiter().GetResult();
+                    return RwTask.FromResult();
+                }
+                catch (Exception ex)
+                {
+                    return RwTask.FromException(ex);
+                }
+            }
+            var tcs = new RwTaskCompletionSource();
+            task.GetAwaiter().OnCompleted(() =>
+            {
+                try
+                {
+                    task.GetAwaiter().GetResult();
+                    tcs.TrySetResult();
+                }
+                catch (Exception ex)
+                {
+                    tcs.TrySetException(ex);
+                }
+            });
+            return tcs.Task;
+        }
+
         internal static bool TryGetDestroyTokenSource(this UpdatableAndDeletable obj, out CancellationTokenSource cts)
         {
             if (_objDestroyTokens.TryGetValue(obj, out cts))

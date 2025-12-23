@@ -10,9 +10,11 @@ using UnityEngine;
 
 namespace SCUtils.SCTween
 {
-    internal static class SCTweenExtension
+    public static class SCTweenExtension
     {
         static float test1, test2;
+        static Vector2 testV1;
+
         public static void Test()
         {
             SCHelperUtils.Log($"Tween Float Start at {DateTime.Now}");

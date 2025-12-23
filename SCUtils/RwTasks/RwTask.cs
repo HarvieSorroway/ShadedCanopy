@@ -193,7 +193,7 @@ namespace SCUtils.RwTasks
         /// 无限期挂起，直到传入的 CancellationToken 被取消。
         /// </summary>
         public static RwTask WaitCanceled(CancellationToken token)
-            => RwTaskPromise.Create(token).Task;
+            => RwTaskPromise.Create(token, RwTaskContext.Current).Task;
 
         /// <summary>
         /// 无限期挂起，直到传入的 CancellationTokenSource 被取消。
@@ -243,10 +243,10 @@ namespace SCUtils.RwTasks
         {
             if (tasks == null || tasks.Length == 0) return;
             var span = (RwTask[])tasks.Clone();
-            var tcs = new RwTaskCompletionSource<bool>();
+            var tcs = new RwTaskCompletionSource<bool>(RwTaskContext.Current);
             int remaining = tasks.Length;
             bool hasError = false;
-            ConcurrentBag<Exception> exceptions = null;
+            Lazy<ConcurrentBag<Exception>> exceptions = new Lazy<ConcurrentBag<Exception>>();
             foreach (var task in span)
             {
                 task.GetAwaiter().OnCompleted(() =>
@@ -258,16 +258,12 @@ namespace SCUtils.RwTasks
                     catch (Exception ex)
                     {
                         Volatile.Write(ref hasError, true);
-                        if (exceptions == null)
-                        {
-                            exceptions = new ConcurrentBag<Exception>();
-                        }
-                        exceptions.Add(ex);
+                        exceptions.Value.Add(ex);
                     }
                     if (Interlocked.Decrement(ref remaining) == 0)
                     {
                         if (Volatile.Read(ref hasError))
-                            tcs.TrySetException(new AggregateException("One or more tasks failed", exceptions));
+                            tcs.TrySetException(new AggregateException("One or more tasks failed", exceptions.Value));
                         else
                             tcs.TrySetResult(true);
                     }
@@ -291,10 +287,10 @@ namespace SCUtils.RwTasks
         {
             if (tasks == null || tasks.Length == 0) return default;
             var span = (RwTask<T>[])tasks.Clone();
-            var tcs = new RwTaskCompletionSource<T[]>();
+            var tcs = new RwTaskCompletionSource<T[]>(RwTaskContext.Current);
             int remaining = span.Length;
             bool hasError = false;
-            ConcurrentBag<Exception> exceptions = null;
+            Lazy<ConcurrentBag<Exception>> exceptions = new Lazy<ConcurrentBag<Exception>>();
             T[] results = new T[span.Length];
             for (int i = 0; i < span.Length; i++)
             {
@@ -310,16 +306,12 @@ namespace SCUtils.RwTasks
                     catch (Exception ex)
                     {
                         Volatile.Write(ref hasError, true);
-                        if (exceptions == null)
-                        {
-                            exceptions = new ConcurrentBag<Exception>();
-                        }
-                        exceptions.Add(ex);
+                        exceptions.Value.Add(ex);
                     }
                     if (Interlocked.Decrement(ref remaining) == 0)
                     {
                         if (Volatile.Read(ref hasError))
-                            tcs.TrySetException(new AggregateException("One or more tasks failed", exceptions));
+                            tcs.TrySetException(new AggregateException("One or more tasks failed", exceptions.Value));
                         else
                             tcs.TrySetResult(results);
                     }
@@ -342,7 +334,7 @@ namespace SCUtils.RwTasks
         public static async RwTask WhenAny(params RwTask[] tasks)
         {
             if (tasks == null || tasks.Length == 0) return;
-            var tcs = new RwTaskCompletionSource<bool>();
+            var tcs = new RwTaskCompletionSource<bool>(RwTaskContext.Current);
             var span = (RwTask[])tasks.Clone();
             foreach (var task in span)
             {
@@ -362,7 +354,7 @@ namespace SCUtils.RwTasks
             await tcs.Task;
             foreach(var task in span)
             {
-                task.GetAwaiter().OnCompleted(null); //释放tcs引用
+                task.Forget(); //清理
             }
         }
 
@@ -380,7 +372,7 @@ namespace SCUtils.RwTasks
         public static async RwTask<T> WhenAny<T>(params RwTask<T>[] tasks)
         {
             if (tasks == null || tasks.Length == 0) return default;
-            var tcs = new RwTaskCompletionSource<T>();
+            var tcs = new RwTaskCompletionSource<T>(RwTaskContext.Current);
             var span = (RwTask<T>[])tasks.Clone();
             foreach (var task in span)
             {
@@ -400,7 +392,7 @@ namespace SCUtils.RwTasks
             var re = await tcs.Task;
             foreach (var task in span)
             {
-                task.GetAwaiter().OnCompleted(null); //释放tcs引用
+                task.Forget(); //清理
             }
             return re;
         }
@@ -423,8 +415,13 @@ namespace SCUtils.RwTasks
             if (token.IsCancellationRequested)
                 return await RwTask.FromCanceled<bool>(token);
 
-            var tcs = new RwTaskCompletionSource<bool>();
-            var ctr = token.Register(() => tcs.TrySetCanceled());
+            var tcs = new RwTaskCompletionSource<bool>(RwTaskContext.Current);
+            CancellationTokenRegistration ctr = default;
+            ctr = token.Register(() =>
+            {
+                tcs.TrySetCanceled();
+                ctr.Dispose();
+            });
 
             RegisteredWaitHandle registeredWaitHandle = null;
             WaitOrTimerCallback callback = (state, timedOut) =>
@@ -471,6 +468,25 @@ namespace SCUtils.RwTasks
             return promise.Task;
         }
 
+
+        /// <summary>
+        /// 创建一个处于异常状态的任务。
+        /// </summary>
+        public static RwTask FromException(Exception exception)
+        {
+            var promise = RwTaskPromise.CreateException(exception);
+            return promise.Task;
+        }
+
+        /// <summary>
+        /// 创建一个处于异常状态的带返回值的任务。
+        /// </summary>
+        public static RwTask<T> FromException<T>(Exception exception)
+        {
+            var promise = RwTaskPromise<T>.CreateException(exception);
+            return promise.Task;
+        }
+
         /// <summary>
         /// 创建一个已成功完成的任务。
         public static RwTask FromResult()
@@ -482,53 +498,10 @@ namespace SCUtils.RwTasks
         /// <summary>
         /// 创建一个已成功完成的带返回值的任务。
         /// </summary>
-        public static RwTask<T> FromResult<T>()
+        public static RwTask<T> FromResult<T>(T result)
         {
-            var promise = RwTaskPromise<T>.CreateCompleted();
+            var promise = RwTaskPromise<T>.CreateCompleted(result);
             return promise.Task;
-        }
-
-        /// <summary>
-        /// 测试样例
-        /// </summary>
-        /// <returns></returns>
-        private static void NoAwait()
-        {
-            Test().Forget(); //一定要调用Forget以确保任务被正确回收（在不await和GetResult的情况下）
-        }
-
-        /// <summary>
-        /// 测试样例
-        /// </summary>
-        /// <returns></returns>
-        private static async RwTask Test()
-        {
-            SCHelperUtils.Log(await Test2());
-        }
-
-
-        /// <summary>
-        /// 测试样例
-        /// </summary>
-        /// <returns></returns>
-        private static async RwTask<DateTime> Test2()
-        {
-            SCHelperUtils.Log($"4 - {DateTime.Now}");
-            await RwTask.DelayEarlyFrames(80);
-            SCHelperUtils.Log($"3 - {DateTime.Now}");
-            await RwTask.DelayEarlyFrames(80);
-            SCHelperUtils.Log($"2 - {DateTime.Now}");
-            await RwTask.DelayEarlyFrames(80);
-            SCHelperUtils.Log($"1 - {DateTime.Now}");
-            await RwTask.DelayEarlyFrames(80);
-            return DateTime.Now;
-        }
-
-        private static async void SwitchToRwLoop()
-        {
-            //其他线程操作
-            await RwTask.Yield();
-            //主线程操作
         }
     }
 
@@ -578,14 +551,20 @@ namespace SCUtils.RwTasks
             public void GetResult()
             {
                 if (_task._source == null) return;
-                ((RwTaskPromise)(_task._source)).GetResult(_task._token);
+                ((IRwTaskSourceVoid)(_task._source)).GetResult(_task._token);
             }
             /// <summary>
             /// 注册在任务完成时调用的后续操作。
             /// </summary>
             public void OnCompleted(Action continuation)
             {
+                if(_task._source is null)
+                {
+                    continuation?.Invoke();
+                    return;
+                }
                 _task._source.OnCompleted(continuation, _task._token);
+               
             }
         }
 
@@ -669,7 +648,7 @@ namespace SCUtils.RwTasks
             public T GetResult()
             {
                 if (_task._source == null) return _task._result;
-                return ((RwTaskPromise<T>)(_task._source)).GetResult(_task._token);
+                return ((IRwTaskSource<T>)(_task._source)).GetResult(_task._token);
             }
 
             /// <summary>
@@ -677,7 +656,11 @@ namespace SCUtils.RwTasks
             /// </summary>
             public void OnCompleted(Action continuation)
             {
-             
+                if (_task._source is null)
+                {
+                    continuation?.Invoke();
+                    return;
+                }
                 _task._source.OnCompleted(continuation, _task._token);
             }
         }

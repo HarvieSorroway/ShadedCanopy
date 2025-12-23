@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,27 +21,55 @@ namespace SCUtils.RwTasks
 
         public static RwLoopRunner DefaultRunner { get; }
 
+        private static readonly ConcurrentStack<DelayNode> _pool = new ConcurrentStack<DelayNode>();
+
+        private static DelayNode Create()
+        {
+            if(_pool.TryPop(out var re))
+            {
+                return re;
+            }
+            return new DelayNode();
+        }
+
+        private static void Release(DelayNode item)
+        {
+            item.Reset();
+            _pool.Push(item);
+        }
+
         static RwLoopRunner()
         {
             DefaultRunner = LateRawUpdateRunner;
         }
 
 
-        private struct DelayItem
+        private class DelayNode
         {
             public RwTaskPromise Promise;
             public long TargetFrame;
             public double TargetTime;
             public bool IsTimeBased;
             public short Token;
+            public DelayNode NextNode;
+
+            public void Reset()
+            {
+                Promise = null;
+                IsTimeBased = false;
+                NextNode = null;
+                TargetFrame = 0;
+                TargetTime = 0;
+            }
         }
 
-        private readonly List<DelayItem> _delayedTasks = new ();
         private readonly Func<float> _timeDelteFunc;
 
 
         private IRwTaskSource _head;
         private IRwTaskSource _tail;
+        private DelayNode _delayHead;
+        private DelayNode _delayTail;
 
         private object _lock = new object();
 
@@ -53,30 +83,50 @@ namespace SCUtils.RwTasks
 
         public void ScheduleDelayFrames(RwTaskPromise promise, int frames)
         {
+            var node = Create();
+            node.Promise = promise;
+            node.TargetFrame = _currentFrameCount + frames;
+            node.IsTimeBased = false;
+            node.Token = promise.Token;
             lock (_lock)
             {
-                _delayedTasks.Add(new DelayItem
+                node.NextNode = null;
+
+                if (_delayHead == null)
                 {
-                    Promise = promise,
-                    TargetFrame = _currentFrameCount + frames,
-                    IsTimeBased = false,
-                    Token = promise.Token,
-                });
+                    _delayHead = node;
+                    _delayTail = node;
+                }
+                else
+                {
+                    _delayTail.NextNode = node;
+                    _delayTail = node;
+                }
             }
         }
 
  
         public void ScheduleDelaySeconds(RwTaskPromise promise, float seconds)
         {
+            var node = Create();
+            node.Promise = promise;
+            node.TargetTime = _currentTime + (double)seconds;
+            node.IsTimeBased = true;
+            node.Token = promise.Token;
             lock (_lock)
             {
-                _delayedTasks.Add(new DelayItem
+                node.NextNode = null;
+                if (_delayHead == null)
                 {
-                    Promise = promise,
-                    TargetTime = _currentTime + (double)seconds, 
-                    IsTimeBased = true,
-                    Token = promise.Token,
-                });
+                    _delayHead = node;
+                    _delayTail = node;
+                }
+                else
+                {
+                    _delayTail.NextNode = node;
+                    _delayTail = node;
+                }
+
             }
         }
 
@@ -101,31 +151,76 @@ namespace SCUtils.RwTasks
 
         private void TickDelayedTasks()
         {
-            if (_delayedTasks.Count > 0)
+            DelayNode tmpHead = null;
+            DelayNode node = null;
+            DelayNode lastNode = null;
+            lock (_lock)
             {
-                int count = _delayedTasks.Count;
-                for (int i = count - 1; i >= 0; i--)
+                lastNode = null;
+                tmpHead = node = _delayHead;
+                _delayTail = null;
+                _delayHead = null;
+            }
+            try
+            {
+                while (node != null)
                 {
-                    var item = _delayedTasks[i];
-                    if(item.Promise.Token != item.Token || item.Promise.GetStatus(item.Token) != RwTaskStatus.Pending)
+                    bool needRelease = false;
+                    if (node.Promise.Token != node.Token || node.Promise.GetStatus(node.Token) != RwTaskStatus.Pending)
                     {
-                        _delayedTasks.RemoveAt(i); //在外部取消或完成，删除
-                        continue;
-                    }
-                    bool isReady = false;
-                    if (item.IsTimeBased)
-                    {
-                        if (_currentTime >= item.TargetTime) isReady = true;
+                        needRelease = true;
                     }
                     else
                     {
-                        if (_currentFrameCount >= item.TargetFrame) isReady = true;
-                    }
+                        bool isReady = false;
+                        if (node.IsTimeBased)
+                        {
+                            if (_currentTime >= node.TargetTime) isReady = true;
+                        }
+                        else
+                        {
+                            if (_currentFrameCount >= node.TargetFrame) isReady = true;
+                        }
 
-                    if (isReady)
+                        if (isReady)
+                        {
+                            node.Promise.SetResult();
+
+                            needRelease = true;
+                        }
+                    }
+                    if (needRelease)
                     {
-                        item.Promise.SetResult(); 
-                        _delayedTasks.RemoveAt(i);
+                        var tmp = node;
+                        if (node == tmpHead) tmpHead = node.NextNode;
+                        else lastNode.NextNode = node.NextNode;
+                        node = node.NextNode;
+                        Release(tmp);
+                    }
+                    else
+                    {
+                        lastNode = node;
+                        node = node.NextNode;
+                    }
+                }
+            }
+            finally
+            {
+                lock (_lock)
+                {
+                    if (tmpHead == null && lastNode == null)
+                    {
+
+                    }
+                    else if (_delayHead == null)
+                    {
+                        _delayHead = tmpHead;
+                        _delayTail = lastNode;
+                    }
+                    else
+                    {
+                        _delayTail.NextNode = tmpHead;
+                        _delayTail = lastNode;
                     }
                 }
             }
@@ -133,50 +228,60 @@ namespace SCUtils.RwTasks
 
         private void TickExecuteTask()
         {
-            var current = _head;
-            _head = null;
-            _tail = null;
-
+            IRwTaskSource current = null;
+            lock (_lock)
+            {
+                 current = _head;
+                _head = null;
+                _tail = null;
+            }
             IRwTaskSource pendingHead = null;
             IRwTaskSource pendingTail = null;
-
-            //保留双队列，虽然现在没什么用了
-            while (current != null)
+            try
             {
-                var next = current.NextNode;
-
-                current.NextNode = null;
-
-                bool isFinished = current.Execute();
-
-                if (!isFinished)
+                //保留双链表，虽然现在没什么用了
+                while (current != null)
                 {
-                    if (pendingHead == null)
-                    {
-                        pendingHead = current;
-                        pendingTail = current;
-                    }
-                    else
-                    {
-                        pendingTail.NextNode = current;
-                        pendingTail = current;
-                    }
-                }
+                    var next = current.NextNode;
 
-                current = next;
+                    current.NextNode = null;
+
+                    bool isFinished = current.Execute();
+
+                    if (!isFinished)
+                    {
+                        if (pendingHead == null)
+                        {
+                            pendingHead = current;
+                            pendingTail = current;
+                        }
+                        else
+                        {
+                            pendingTail.NextNode = current;
+                            pendingTail = current;
+                        }
+                    }
+
+                    current = next;
+                }
             }
-
-            if (pendingHead != null)
+            finally
             {
-                if (_head == null)
+                lock (_lock)
                 {
-                    _head = pendingHead;
-                    _tail = pendingTail;
-                }
-                else
-                {
-                    _tail.NextNode = pendingHead;
-                    _tail = pendingTail;
+                    if (pendingHead != null)
+                    {
+                        if (_head == null)
+                        {
+                            _head = pendingHead;
+                            _tail = pendingTail;
+                        }
+                        else
+                        {
+                            _tail.NextNode = pendingHead;
+                            _tail = pendingTail;
+                        }
+                    }
                 }
             }
         }

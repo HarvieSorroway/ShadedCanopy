@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -455,8 +456,7 @@ namespace SCUtils.RwTasks
         /// </summary>
         public static RwTask FromCanceled(CancellationToken token)
         {
-            var promise = RwTaskPromise.CreateCanceled(token);
-            return promise.Task;
+            return new RwTask(token);
         }
 
         /// <summary>
@@ -464,8 +464,7 @@ namespace SCUtils.RwTasks
         /// </summary>
         public static RwTask<T> FromCanceled<T>(CancellationToken token)
         {
-            var promise = RwTaskPromise<T>.CreateCanceled(token);
-            return promise.Task;
+            return new RwTask<T>(token);
         }
 
 
@@ -474,8 +473,7 @@ namespace SCUtils.RwTasks
         /// </summary>
         public static RwTask FromException(Exception exception)
         {
-            var promise = RwTaskPromise.CreateException(exception);
-            return promise.Task;
+            return new RwTask(exception);
         }
 
         /// <summary>
@@ -483,16 +481,14 @@ namespace SCUtils.RwTasks
         /// </summary>
         public static RwTask<T> FromException<T>(Exception exception)
         {
-            var promise = RwTaskPromise<T>.CreateException(exception);
-            return promise.Task;
+            return new RwTask<T>(exception);
         }
 
         /// <summary>
         /// 创建一个已成功完成的任务。
         public static RwTask FromResult()
         {
-            var promise = RwTaskPromise.CreateCompleted();
-            return promise.Task;
+            return new RwTask();
         }
 
         /// <summary>
@@ -500,8 +496,7 @@ namespace SCUtils.RwTasks
         /// </summary>
         public static RwTask<T> FromResult<T>(T result)
         {
-            var promise = RwTaskPromise<T>.CreateCompleted(result);
-            return promise.Task;
+            return new RwTask<T>(result);
         }
     }
 
@@ -509,11 +504,31 @@ namespace SCUtils.RwTasks
     {
         private readonly IRwTaskSource _source;
         private readonly short _token;
+        private readonly Exception? _exception;
+        private readonly bool _isCanceled;
 
-        public RwTask(IRwTaskSource source, short token)
+        internal RwTask(IRwTaskSource source, short token)
         {
             _source = source;
             _token = token;
+            _exception = null;
+            _isCanceled = false;
+        }
+
+        internal RwTask(Exception exception)
+        {
+            _exception = exception;
+            _isCanceled = false;
+            _source = null;
+            _token = 0;
+        }
+
+        internal RwTask(CancellationToken token)
+        {
+            _exception = new OperationCanceledException(token);
+            _isCanceled = true;
+            _source = null;
+            _token = 0;
         }
 
         /// <summary>
@@ -550,9 +565,14 @@ namespace SCUtils.RwTasks
             /// </summary>
             public void GetResult()
             {
-                if (_task._source == null) return;
+                if (_task._source == null)
+                {
+                    if(_task._exception != null)
+                        ExceptionDispatchInfo.Capture(_task._exception).Throw();
+                }
                 ((IRwTaskSourceVoid)(_task._source)).GetResult(_task._token);
             }
+
             /// <summary>
             /// 注册在任务完成时调用的后续操作。
             /// </summary>
@@ -581,13 +601,25 @@ namespace SCUtils.RwTasks
         }
 
         /// <summary>
+        /// 指示任务是否已被取消。
+        /// </summary>
+        public bool IsCanceled
+        {
+            get
+            {
+                if (_source == null) return _isCanceled;
+                return _source.GetStatus(_token) == RwTaskStatus.Canceled;
+            }
+        }
+
+        /// <summary>
         /// 指示任务是否因异常而失败。
         /// </summary>
         public bool IsFaulted
         {
             get
             {
-                if (_source == null) return false;
+                if (_source == null) return _exception is not null && !_isCanceled;
                 return _source.GetStatus(_token) == RwTaskStatus.Faulted;
             }
         }
@@ -599,18 +631,42 @@ namespace SCUtils.RwTasks
         private readonly T _result;
         private readonly IRwTaskSource _source;
         private readonly short _token;
+        private readonly Exception? _exception;
+        private readonly bool _isCanceled;
 
         public RwTask(T result)
         {
             _result = result;
             _source = null;
             _token = 0;
+            _exception = null;
+            _isCanceled = false;
         }
         public RwTask(IRwTaskSource<T> source, short token)
         {
             _result = default;
             _source = source;
             _token = token;
+            _exception = null;
+            _isCanceled = false;
+        }
+
+        internal RwTask(Exception exception)
+        {
+            _result = default;
+            _exception = exception;
+            _isCanceled = false;
+            _source = null;
+            _token = 0;
+        }
+
+        internal RwTask(CancellationToken token)
+        {
+            _result = default;
+            _exception = new OperationCanceledException(token);
+            _isCanceled = true;
+            _source = null;
+            _token = 0;
         }
 
         /// <summary>
@@ -647,7 +703,13 @@ namespace SCUtils.RwTasks
             /// </summary>
             public T GetResult()
             {
-                if (_task._source == null) return _task._result;
+                if (_task._source == null)
+                {
+                    if (_task._exception != null)
+                        ExceptionDispatchInfo.Capture(_task._exception).Throw();
+                    else
+                        return _task._result;
+                }
                 return ((IRwTaskSource<T>)(_task._source)).GetResult(_task._token);
             }
 
@@ -676,6 +738,17 @@ namespace SCUtils.RwTasks
                 return GetAwaiter().IsCompleted;
             }
         }
+        /// <summary>
+        /// 指示任务是否已被取消。
+        /// </summary>
+        public bool IsCanceled
+        {
+            get
+            {
+                if (_source == null) return _isCanceled;
+                return _source.GetStatus(_token) == RwTaskStatus.Canceled;
+            }
+        }
 
         /// <summary>
         /// 指示任务是否因异常而失败。
@@ -684,7 +757,7 @@ namespace SCUtils.RwTasks
         {
             get
             {
-                if (_source == null) return false;
+                if (_source == null) return _exception is not null && !_isCanceled;
                 return _source.GetStatus(_token) == RwTaskStatus.Faulted;
             }
         }

@@ -10,27 +10,20 @@ using UnityEngine;
 
 namespace SCUtils.SCTween
 {
-    public static class SCTweenExtension
+    public static class SCTween
     {
         static float test1, test2;
         static Vector2 testV1;
 
         public static void Test()
         {
-            SCHelperUtils.Log($"Tween Float Start at {DateTime.Now}");
-            test1.TweenFloat(0f, 1f, 2f).RunAsync().Forget();
-
-            SCHelperUtils.Log($"Tween Float2 Start at {DateTime.Now}");
-            test2.TweenFloat(1f, 3f, 3f).RunAsync().Forget();
         }
-        public static SCTweenContext<float> TweenFloat(this ref float target, float from, float to, float duration)
+        public static SCTweenContext<float> TweenFloat(Action<float> setVal, float from, float to, float duration)
         {
             SCUtils.Log($"Tween Float Start at {DateTime.Now}, from {from} - to {to}, frames {Sec2Frame(duration)}");
 
-            StrongBox<float> box = new StrongBox<float>(target);
-
             return new SCTweenContext<float>(
-                box,
+                setVal,
                 from,
                 to,
                 Sec2Frame(duration),
@@ -38,27 +31,25 @@ namespace SCUtils.SCTween
                 );
         }
 
-        public static SCTweenContext<Vector2> TweenVector2(this ref Vector2 target, Vector2 from, Vector2 to, float duration)
+        public static SCTweenContext<Vector2> TweenVector2(Action<Vector2> setVal, Vector2 from, Vector2 to, float duration)
         {
             SCUtils.Log($"Tween Vector2 Start at {DateTime.Now}, from {from} - to {to}, frames {Sec2Frame(duration)}");
 
-            StrongBox<Vector2> box = new StrongBox<Vector2>(target);
             return new SCTweenContext<Vector2>(
-                box,
+                setVal,
                 from,
                 to,
                 Sec2Frame(duration),
                 Vector2.Lerp
                 );
         }
-
-        public static SCTweenContext<Color> TweenColor(this Color target, Color from, Color to, float duration)
+        
+        public static SCTweenContext<Color> TweenColor(Action<Color> setVal, Color from, Color to, float duration)
         {
             SCUtils.Log($"Tween Color Start at {DateTime.Now}, from {from} - to {to}, frames {Sec2Frame(duration)}");
 
-            StrongBox<Color> box = new StrongBox<Color>(target);
             return new SCTweenContext<Color>(
-                box,
+                setVal,
                 from,
                 to,
                 Sec2Frame(duration),

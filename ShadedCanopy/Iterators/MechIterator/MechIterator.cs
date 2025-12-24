@@ -36,7 +36,7 @@ namespace ShadedCanopy.Iterators.MechIterator
 
             SCDevNodeTreeManager.Track(this);
 
-            pos.TweenVector2(new Vector2(500f, 400f), new Vector2(800f, 400f), 3f)
+            SCTween.TweenVector2((val) => this.pos = val,new Vector2(500f, 400f), new Vector2(800f, 400f), 3f)
                 .SetEase(SCHelperUtils.EaseInOutCubic)
                 .RunAsync()
                 .Forget();

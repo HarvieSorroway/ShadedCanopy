@@ -18,7 +18,7 @@ namespace SCUtils.SCTween
 
     public class SCTweenContext<T> : SCTweenContextBase
         {
-        public readonly StrongBox<T> boxedTarget;
+        public readonly Action<T> setValueFunction;
         public readonly T From, To;
         public int frames;
         public Func<float, float> easeFunction;
@@ -27,13 +27,13 @@ namespace SCUtils.SCTween
 
 
         public SCTweenContext(
-            StrongBox<T> boxedTarget,
+            Action<T> setValueFunction,
             T from,
             T to,
             int durationFrames,
             Func<T, T, float, T> lerpFunction)
         {
-            this.boxedTarget = boxedTarget;
+            this.setValueFunction = setValueFunction;
             From = from;
             To = to;
             frames = durationFrames;
@@ -59,10 +59,8 @@ namespace SCUtils.SCTween
                 float t = (float)i / frames;
                 if (easeFunction != null)
                     t = easeFunction(t);
-                boxedTarget.Value = lerpFunction(From, To, t);
+                setValueFunction.Invoke(lerpFunction(From, To, t));
                 await RwTasks.RwTask.Yield();
-                
-                SCHelperUtils.Log($"Tween {typeof(T).Name} Complete at {DateTime.Now}, value : {boxedTarget.Value}");
             } 
             finishCallBack?.Invoke();
         }

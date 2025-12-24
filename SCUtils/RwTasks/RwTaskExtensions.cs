@@ -27,7 +27,7 @@ namespace SCUtils.RwTasks
         public static void Forget(this RwTask task, Action<Exception> onException = null)
         {
             var awaiter = task.GetAwaiter();
-            if (awaiter.IsCompleted)
+            if (task.IsCompleted)
             {
                 try { awaiter.GetResult(); }
                 catch (Exception ex) { onException?.Invoke(ex); }

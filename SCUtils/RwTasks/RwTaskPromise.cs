@@ -48,41 +48,6 @@ namespace SCUtils.RwTasks
             return promise;
         }
 
-
-        public static RwTaskPromise CreateCompleted()
-        {
-            RwTaskPromise promise;
-            if (_pool.TryPop(out promise)) { }
-            else promise = new RwTaskPromise();
-            promise._status = RwTaskStatus.Succeeded;
-            promise._isFinished = true; //防止OnCompleted不执行
-            return promise;
-        }
-
-        public static RwTaskPromise CreateCanceled(CancellationToken token)
-        {
-            RwTaskPromise promise;
-            if (_pool.TryPop(out promise)) { }
-            else promise = new RwTaskPromise();
-            promise._cancellationToken = token;
-            promise._status = RwTaskStatus.Canceled;
-            promise._isFinished = true; //防止OnCompleted不执行
-            promise._exception = new OperationCanceledException(token);
-            return promise;
-        }
-
-
-        public static RwTaskPromise CreateException(Exception ex)
-        {
-            RwTaskPromise promise;
-            if (_pool.TryPop(out promise)) { }
-            else promise = new RwTaskPromise();
-            promise._status = RwTaskStatus.Faulted;
-            promise._isFinished = true; //防止OnCompleted不执行
-            promise._exception = ex;
-            return promise;
-        }
-
         protected virtual void Return(RwTaskPromise promise)
         {
             promise.Reset();
@@ -98,7 +63,7 @@ namespace SCUtils.RwTasks
         protected CancellationToken _cancellationToken;
         protected short _token;
         protected IRwTaskSource _nextNode;
-        protected bool _isFinished;
+        protected volatile bool _isFinished;
         protected bool _forceNextFrame;
         protected CancellationTokenRegistration _ctr;
 
@@ -110,7 +75,13 @@ namespace SCUtils.RwTasks
 
         protected void Setup()
         {
-            _ctr = _cancellationToken.Register(() => SetCancel());
+            if (!_cancellationToken.CanBeCanceled) return;
+
+            var ctr = _cancellationToken.Register(static s => ((RwTaskPromise)s!).SetCancel(), this);
+            _ctr = ctr; 
+
+            if (_isFinished) //防止在Setup期间内触发其他Complete条件导致提前Finish无法清理Ctr
+                ctr.Dispose();
         }
  
         public virtual bool Execute()
@@ -141,14 +112,7 @@ namespace SCUtils.RwTasks
                 Interlocked.Exchange(ref _continuation, null);
                 return;
             }
-            Action wrappedAction = continuation;
-            var capturedContext = ExecutionContext.Capture();
-            if (capturedContext is null)
-                wrappedAction = continuation;
-            else
-                wrappedAction = () => ExecutionContext.Run(capturedContext, _ => continuation(), null);
-
-            var oldContinuation = Interlocked.CompareExchange(ref _continuation, wrappedAction, null);
+            var oldContinuation = Interlocked.CompareExchange(ref _continuation, continuation, null);
 
             if (oldContinuation != null)
             {
@@ -317,40 +281,6 @@ namespace SCUtils.RwTasks
             return promise;
         }
 
-        public static RwTaskPromise<T> CreateCompleted(T value)
-        {
-            RwTaskPromise<T> promise;
-            if (_pool.TryPop(out promise)) { }
-            else promise = new RwTaskPromise<T>();
-            promise._result = value;
-            promise._status = RwTaskStatus.Succeeded;
-            promise._isFinished = true; //防止OnCompleted不执行
-            return promise;
-        }
-
-        public static RwTaskPromise<T> CreateCanceled(CancellationToken token)
-        {
-            RwTaskPromise<T> promise;
-            if (_pool.TryPop(out promise)) { }
-            else promise = new RwTaskPromise<T>();
-            promise._cancellationToken = token;
-            promise._status = RwTaskStatus.Canceled;
-            promise._exception = new OperationCanceledException(token);
-            promise._isFinished = true; //防止OnCompleted不执行 
-            return promise;
-        }
-
-        public static RwTaskPromise<T> CreateException(Exception ex)
-        {
-            RwTaskPromise<T> promise;
-            if (_pool.TryPop(out promise)) { }
-            else promise = new RwTaskPromise<T>();
-            promise._status = RwTaskStatus.Faulted;
-            promise._isFinished = true; //防止OnCompleted不执行
-            promise._exception = ex;
-            return promise;
-        }
-
         protected virtual void Return(RwTaskPromise<T> promise)
         {
             promise.Reset();
@@ -367,7 +297,7 @@ namespace SCUtils.RwTasks
         private CancellationToken _cancellationToken;
         private short _token;
         private IRwTaskSource _nextNode;
-        private bool _isFinished;
+        private volatile bool _isFinished;
         private bool _forceNextFrame;
         private CancellationTokenRegistration _ctr;
 
@@ -381,7 +311,13 @@ namespace SCUtils.RwTasks
 
         private void Setup()
         {
-            _ctr = _cancellationToken.Register(() => SetCancel());
+            if (!_cancellationToken.CanBeCanceled) return;
+
+            var ctr = _cancellationToken.Register(static s => ((RwTaskPromise)s!).SetCancel(), this);
+            _ctr = ctr;
+
+            if (_isFinished) //防止在Setup期间内触发其他Complete条件导致提前Finish无法清理Ctr
+                ctr.Dispose();
         }
 
 
@@ -413,14 +349,9 @@ namespace SCUtils.RwTasks
                 Interlocked.Exchange(ref _continuation, null);
                 return;
             }
-            Action wrappedAction = continuation;
-            var capturedContext = ExecutionContext.Capture();
-            if (capturedContext is null)
-                wrappedAction = continuation;
-            else
-                wrappedAction = () => ExecutionContext.Run(capturedContext, _ => continuation(), null);
-
-            var oldContinuation = Interlocked.CompareExchange(ref _continuation, wrappedAction, null);
+            ;
+ 
+            var oldContinuation = Interlocked.CompareExchange(ref _continuation, continuation, null);
 
             if (oldContinuation != null)
             {

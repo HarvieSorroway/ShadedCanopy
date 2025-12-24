@@ -58,7 +58,7 @@ namespace SCUtils.RwTasks
         protected Action _continuation;
         protected RwLoopRunner _runner;
         protected Exception _exception;
-        protected ManualResetEventSlim _waitEv;
+        protected TaskCompletionSource<bool> _waitTask;
         protected RwTaskStatus _status;
         protected CancellationToken _cancellationToken;
         protected short _token;
@@ -139,25 +139,24 @@ namespace SCUtils.RwTasks
                     if (SCHelperUtils.IsMainThread)
                         throw new InvalidOperationException("Call GetResult for an uncompleted rwTask in mainThread will cause deadlocked");
 
-                    var ev = Volatile.Read(ref _waitEv);
-                    if (ev is null)
+                    var task = Volatile.Read(ref _waitTask);
+                    if (_waitTask is null)
                     {
-                        var newEv = new ManualResetEventSlim(false);
-                        var current = Interlocked.CompareExchange(ref _waitEv, newEv, null);
+                        var newTask = new TaskCompletionSource<bool>();
+                        var current = Interlocked.CompareExchange(ref _waitTask, newTask, null);
 
                         if (current == null)
                         {
-                            ev = newEv;
+                            task = newTask;
                         }
                         else
                         {
-                            ev = current;
-                            newEv.Dispose();
+                            task = current;
                         }
                     }
                     try
                     {
-                        ev?.Wait();
+                        task.Task.GetAwaiter().GetResult();
                     }
                     catch (ObjectDisposedException) { }
 
@@ -178,8 +177,7 @@ namespace SCUtils.RwTasks
             _nextNode = null;
             _isFinished = false;
             _exception = null;
-            try { _waitEv?.Dispose(); } catch { }
-            _waitEv = null;
+            _waitTask = null;
             _exception = null;
             _runner = null;
             _forceNextFrame = false;
@@ -224,11 +222,10 @@ namespace SCUtils.RwTasks
             var cont = Interlocked.Exchange(ref _continuation, null);
             cont?.Invoke();
             _ctr.Dispose();
-            var ev = Interlocked.Exchange(ref _waitEv, null);
+            var ev = Interlocked.Exchange(ref _waitTask, null);
             if (ev != null)
             {
-                ev.Set();
-                ev.Dispose();
+                ev.TrySetResult(true);
             }
             return true;
         }
@@ -291,7 +288,7 @@ namespace SCUtils.RwTasks
         private Action _continuation;
         private RwLoopRunner _runner;
         private Exception _exception;
-        private ManualResetEventSlim _waitEv;
+        protected TaskCompletionSource<bool> _waitTask;
         private T _result;
         private RwTaskStatus _status;
         private CancellationToken _cancellationToken;
@@ -377,27 +374,26 @@ namespace SCUtils.RwTasks
                 {
                     if (SCHelperUtils.IsMainThread)
                         throw new InvalidOperationException("Call GetResult for an uncompleted rwTask in mainThread will cause deadlocked");
-                        
-                    var ev = Volatile.Read(ref _waitEv);
-                    if (ev is null)
+
+                    var task = Volatile.Read(ref _waitTask);
+                    if (_waitTask is null)
                     {
-                        var newEv = new ManualResetEventSlim(false);
-                        var current = Interlocked.CompareExchange(ref _waitEv, newEv, null);
+                        var newTask = new TaskCompletionSource<bool>();
+                        var current = Interlocked.CompareExchange(ref _waitTask, newTask, null);
 
                         if (current == null)
                         {
-                            ev = newEv;
+                            task = newTask;
                         }
                         else
                         {
-                            ev = current;
-                            newEv.Dispose();
+                            task = current;
                         }
 
                     }
                     try
                     {
-                        ev?.Wait();
+                        task.Task.GetAwaiter().GetResult();
                     }
                     catch (ObjectDisposedException)  {  }
 
@@ -418,8 +414,7 @@ namespace SCUtils.RwTasks
             _continuation = null;
             _status = RwTaskStatus.Pending;
             _nextNode = null;
-            try { _waitEv?.Dispose(); } catch { }
-            _waitEv = null;
+            _waitTask = null;
             _exception = null;
             _runner = null;
             _cancellationToken = CancellationToken.None;
@@ -467,11 +462,10 @@ namespace SCUtils.RwTasks
             var cont = Interlocked.Exchange(ref _continuation, null);
             cont?.Invoke();
 
-            var ev = Interlocked.Exchange(ref _waitEv, null);
+            var ev = Interlocked.Exchange(ref _waitTask, null);
             if (ev != null)
             {
-                ev.Set();
-                ev.Dispose();
+                ev.TrySetResult(true);
             }
             return true;
         }

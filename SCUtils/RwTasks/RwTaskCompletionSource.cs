@@ -7,12 +7,14 @@ using System.Threading.Tasks;
 
 namespace SCUtils.RwTasks
 {
-    public class RwTaskCompletionSource<T>
+    public class RwTaskCompletionSource<T> : IDisposable
     {
         private readonly RwTaskPromise<T> _promise;
         private short _token;
 
         public RwTask<T> Task => new RwTask<T>(_promise, _token);
+
+        public bool IsDisposed => _token != _promise.Token;
 
         public RwTaskCompletionSource(RwLoopRunner runner = null)
         {
@@ -48,14 +50,28 @@ namespace SCUtils.RwTasks
             if (!TrySetResult(result))
                 throw new InvalidOperationException("Task is already completed.");
         }
+
+        public void Dispose()
+        {
+            if (!IsDisposed)
+            {
+                try
+                {
+                    Task.GetAwaiter().GetResult();
+                }
+                catch { }
+            }
+        }
     }
 
-    public class RwTaskCompletionSource
+    public class RwTaskCompletionSource : IDisposable
     {
         private readonly RwTaskPromise _promise;
         private short _token;
 
         public RwTask Task => new RwTask(_promise, _token);
+
+        public bool IsDisposed => _token != _promise.Token;
 
         public RwTaskCompletionSource(RwLoopRunner runner = null)
         {
@@ -90,6 +106,18 @@ namespace SCUtils.RwTasks
         {
             if (!TrySetResult())
                 throw new InvalidOperationException("Task is already completed.");
+        }
+
+        public void Dispose()
+        {
+            if (!IsDisposed)
+            {
+                try
+                {
+                    Task.GetAwaiter().GetResult();
+                }
+                catch { }
+            }
         }
     }
 }

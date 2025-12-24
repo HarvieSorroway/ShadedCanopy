@@ -130,7 +130,7 @@ namespace SCUtils.RwTasks
 
         public void GetResult(short token)
         {
-            if (token != _token) throw new InvalidOperationException();
+            if (token != _token) throw new InvalidOperationException("Token mismatched");
 
             try
             {
@@ -369,7 +369,7 @@ namespace SCUtils.RwTasks
 
         public T GetResult(short token)
         {
-            if (token != _token) throw new InvalidOperationException();
+            if (token != _token) throw new InvalidOperationException("Token mismatched");
 
             try
             {

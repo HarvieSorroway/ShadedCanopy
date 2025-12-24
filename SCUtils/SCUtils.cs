@@ -30,7 +30,7 @@ namespace SCUtils
                 SCDevToolsEntry.Init();
             }
             catch { }
-            SCTweenExtension.Test();
+            SCTween.SCTween.Test();
         }
 
         public static void Log(object log)

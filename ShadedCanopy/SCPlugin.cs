@@ -1,17 +1,20 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
+using Newtonsoft.Json;
 using SCUtils;
+using SCUtils.RwTasks;
+using SCUtils.SCSaveManager;
+using ShadedCanopy.Creatures;
 using ShadedCanopy.Creatures.Scavengers;
 using ShadedCanopy.FlashingEffect;
+using ShadedCanopy.Imgui;
+using ShadedCanopy.SaveDatas;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
-using ShadedCanopy.Creatures;
-using ShadedCanopy.Imgui;
-using SCUtils.RwTasks;
 using UnityEngine;
 
 
@@ -73,11 +76,48 @@ namespace ShadedCanopy
                 Objects.SCMorningGlory.SCMorningGloryTest.HookTest();
 
                 SCUtils.SCHelperUtils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");
+
+                //On.RainWorldGame.RawUpdate += RainWorldGame_RawUpdate;
             }
             catch (Exception e)
             {
                 Logger.LogFatal($"Exception during {ModName} RainWorld_OnModsInit: {e}");
             }
         }
+
+        /*
+        private void RainWorldGame_RawUpdate(On.RainWorldGame.orig_RawUpdate orig, RainWorldGame self, float dt)
+        {
+            orig(self, dt);
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                SCHelperUtils.Log(SCDeathPersistentManager.Data);
+            }
+            else if (Input.GetKeyDown(KeyCode.F)) 
+            {
+                SCDeathPersistentManager.Data.foodPrintUnlocked = true;
+            }
+            else if (Input.GetKeyDown(KeyCode.F))
+            {
+                SCDeathPersistentManager.Data.foodPrintUnlocked = true;
+            }
+            else if (Input.GetKeyDown(KeyCode.W))
+            {
+                SCDeathPersistentManager.Data.stashPearls.Add(new DataPearl.AbstractDataPearl(self.world, AbstractPhysicalObject.AbstractObjectType.DataPearl,
+                    null, self.Players[0].pos, self.GetNewID(), -1, -1, null, DataPearl.AbstractDataPearl.DataPearlType.GW));
+            }
+            else if (Input.GetKeyDown(KeyCode.I))
+            {
+                foreach(var data in SCDeathPersistentManager.Data.stashPearls)
+                {
+                    SCHelperUtils.Log(JsonConvert.SerializeObject(data));
+                }
+            }
+            else if (Input.GetKeyDown(KeyCode.G))
+            {
+                SCDeathPersistentManager.Data.meetThisCycle = true;
+            }
+        }
+        */
     }
 }

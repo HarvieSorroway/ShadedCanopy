@@ -26,6 +26,9 @@
     <Reference Include="Mono.Cecil">
       <HintPath>..\includings\Mono.Cecil.dll</HintPath>
     </Reference>
+    <Reference Include="MonoMod.RuntimeDetour">
+      <HintPath>..\includings\MonoMod.RuntimeDetour.dll</HintPath>
+    </Reference>
     <Reference Include="MonoMod.Utils">
       <HintPath>..\includings\MonoMod.Utils.dll</HintPath>
     </Reference>

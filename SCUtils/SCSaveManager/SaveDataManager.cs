@@ -24,12 +24,16 @@ namespace SCUtils.SCSaveManager
         void Clear();
     }
 
-    public abstract class SaveManager<TSelf> : ISaveManager where TSelf : SaveManager<TSelf>, new()
+    public abstract class SaveManager<TSelf, TData> : ISaveManager where TSelf : SaveManager<TSelf, TData>, new() where TData : new()
     {
 
         public static Lazy<TSelf> _instance = new Lazy<TSelf>(() => new TSelf());
 
         public static TSelf Instance => _instance.Value;
+
+        public static TData Data => Instance.SaveData;
+
+        public abstract TData SaveData { get;}
 
         public abstract bool IsAvailable { get; }
 
@@ -46,10 +50,9 @@ namespace SCUtils.SCSaveManager
         public abstract void Clear();
     }
 
-    public abstract class DeathPersistentSaveManager<TSelf, TData> : SaveManager<TSelf> where TSelf : DeathPersistentSaveManager<TSelf, TData>, new()
+    public abstract class DeathPersistentSaveManager<TSelf, TData> : SaveManager<TSelf, TData> where TSelf : DeathPersistentSaveManager<TSelf, TData>, new()
         where TData : ISaveData, new()
     {
-
         protected TData _data = default;
 
         protected TData _oldData = default;
@@ -58,7 +61,7 @@ namespace SCUtils.SCSaveManager
 
         protected StoryGameSession _session = null;
 
-        public virtual TData Data => IsAvailable ? _data : throw new InvalidOperationException($"Save data:{SaveKey} is not avaiable");
+        public override TData SaveData => IsAvailable ? _data : throw new InvalidOperationException($"Save data:{SaveKey} is not avaiable");
 
         public override bool IsAvailable => _isAvaiable;
 
@@ -105,17 +108,16 @@ namespace SCUtils.SCSaveManager
         protected abstract void SaveToData(bool isDied, bool isQuit);
     }
 
-    public abstract class MicsWorldSaveManager<TSelf, TData> : SaveManager<TSelf> where TSelf : MicsWorldSaveManager<TSelf, TData>, new()
+    public abstract class MiscWorldSaveManager<TSelf, TData> : SaveManager<TSelf, TData> where TSelf : MiscWorldSaveManager<TSelf, TData>, new()
        where TData : new()
     {
-
         protected TData _data = default;
 
         protected bool _isAvaiable = false;
 
         protected StoryGameSession _session = null;
 
-        public virtual TData Data => IsAvailable ? _data : throw new InvalidOperationException($"Save data:{SaveKey} is not avaiable");
+        public override TData SaveData => IsAvailable ? _data : throw new InvalidOperationException($"Save data:{SaveKey} is not avaiable");
 
         public override bool IsAvailable => _isAvaiable;
 
@@ -136,19 +138,10 @@ namespace SCUtils.SCSaveManager
 
         public override sealed void Save(bool isDied, bool isQuit)
         {
-            try
-            {
-                if (!IsAvailable || _session is null) return;
-                var slugbase = _session.saveState.miscWorldSaveData.GetSlugBaseData();
-                SaveToData();
-                slugbase.Set(SaveKey, _data);
-            }
-            finally
-            {
-                _session = null;
-                _data = default;
-                _isAvaiable = false;
-            }
+            if (!IsAvailable || _session is null) return;
+            var slugbase = _session.saveState.miscWorldSaveData.GetSlugBaseData();
+            SaveToData();
+            slugbase.Set(SaveKey, _data);
         }
 
         public override void Clear()

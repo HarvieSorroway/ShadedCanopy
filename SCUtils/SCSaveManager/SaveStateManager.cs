@@ -1,45 +1,64 @@
-﻿using Newtonsoft.Json;
+﻿using MonoMod.RuntimeDetour;
+using Newtonsoft.Json;
 using SlugBase.SaveData;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Runtime;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace SCUtils.SCSaveManager
 {
 
-    internal static class SaveStateManager
+    public static class SaveStateManager
     {
         private static List<ISaveManager> _allManagers = new List<ISaveManager>();
 
+        public static WeakReference<World> CurrentWorld = new WeakReference<World>(null);
+
+        public static JsonSerializerSettings Settings { get; private set; }
+
+
         static SaveStateManager()
         {
-            foreach(var type in AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.SafeGetTypes()))
+            Settings = new JsonSerializerSettings();
+            Settings.Converters.Add(new AbstractObjectConverter());
+            JsonConvert.DefaultSettings = () => Settings;
+            var inf = typeof(ISaveManager);
+            foreach (var type in AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.SafeGetTypes()))
             {
-                if(type.IsAssignableFrom(typeof(ISaveManager)) && !type.IsAbstract)
+                if (inf.IsAssignableFrom(type) && !type.IsAbstract)
                 {
-                    if((ISaveManager)type.GetProperty("Instance")?.GetValue(null) is { } manager)
+                    if (type.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static
+                        | BindingFlags.FlattenHierarchy)?.GetValue(null) is ISaveManager manager)
+                    {
                         _allManagers.Add(manager);
+                        SCUtils.Log($"[SaveStateManager] find {type}");
+                    }
                 }
             }
         }
 
         public static void Init()
         {
-            On.StoryGameSession.ctor += StoryGameSession_ctor;
-            On.DeathPersistentSaveData.SaveToString += DeathPersistentSaveData_SaveToString;
-            On.SaveState.RainCycleTick += SaveState_RainCycleTick;
-            On.ProcessManager.PreSwitchMainProcess += ProcessManager_PreSwitchMainProcess;
+    
+            using (new DetourContext(100))
+            {
+                On.RainWorldGame.ctor += RainWorldGame_ctor;
+                On.DeathPersistentSaveData.SaveToString += DeathPersistentSaveData_SaveToString;
+                On.SaveState.RainCycleTick += SaveState_RainCycleTick;
+                On.ProcessManager.PreSwitchMainProcess += ProcessManager_PreSwitchMainProcess;
+            }
         }
 
-        private static void StoryGameSession_ctor(On.StoryGameSession.orig_ctor orig, StoryGameSession self, SlugcatStats.Name saveStateNumber, RainWorldGame game)
+        private static void RainWorldGame_ctor(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
         {
-            orig(self, saveStateNumber, game);
-            foreach (var manager in _allManagers) 
-            {
-                manager.Init(self);
-            }
+            orig(self, manager);
+            CurrentWorld = new WeakReference<World>(self.world);
+            if (self.IsStorySession)
+                InitNewSession(self.GetStorySession);
         }
 
         private static void ProcessManager_PreSwitchMainProcess(On.ProcessManager.orig_PreSwitchMainProcess orig, ProcessManager self, ProcessManager.ProcessID ID)

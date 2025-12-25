@@ -26,7 +26,10 @@ namespace SCUtils
             logger = manualLogSource;
             PlacedObjectExt.Init();
             RwTaskHooks.Init();
-            SaveStateManager.Init();
+            On.RainWorld.PostModsInit += (orig, self) => 
+            {
+                orig(self); SaveStateManager.Init(); 
+            };
 
             try
             {

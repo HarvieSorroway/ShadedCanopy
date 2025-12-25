@@ -11,12 +11,12 @@ using UnityEngine;
 
 namespace ShadedCanopy.Iterators.MechIterator
 {
-    [SCDevToolsInspectType("Root.RainWorld.Game.World.Room","MechIterator")]
+    
     internal class MechIterator : UpdatableAndDeletable, IDrawable
     {
         public MechIteratorGraphic graphic;
         public MechIteratorBehaviour behaviour;
-        [SCDevToolsInspectValue] 
+
         public Vector2 pos = new Vector2(500f, 400f);
 
         public LightSource lightSource;
@@ -36,10 +36,10 @@ namespace ShadedCanopy.Iterators.MechIterator
 
             SCDevNodeTreeManager.Track(this);
 
-            SCTween.TweenVector2((val) => this.pos = val,new Vector2(500f, 400f), new Vector2(800f, 400f), 3f)
-                .SetEase(SCHelperUtils.EaseInOutCubic)
-                .RunAsync()
-                .Forget();
+            //SCTween.TweenVector2((val) => this.pos = val,new Vector2(500f, 400f), new Vector2(800f, 400f), 3f)
+            //    .SetEase(SCHelperUtils.EaseInOutCubic)
+            //    .RunAsync()
+            //    .Forget();
         }
 
         public override void Update(bool eu)

@@ -28,7 +28,7 @@ namespace ShadedCanopy.Iterators.MechIterator
         //动画参数
         float Expand;
 
-        public Vector2 noticedPlayerPos;
+        public Vector2 lookAtPos;
         Vector2 lookDir;//-1 ~ 1;
 
         public AnimationID animationID, nextAnimation;
@@ -658,7 +658,7 @@ namespace ShadedCanopy.Iterators.MechIterator
                     //{
                     //    graphic.RequestSwitchAnimation(AnimationID.Idle);
                     //}
-                    Vector2 deltaPox = (graphic.noticedPlayerPos - graphic.mechIterator.pos);
+                    Vector2 deltaPox = (graphic.lookAtPos - graphic.mechIterator.pos);
 
                     Vector2 targetLookDir = new Vector2(Mathf.InverseLerp(-500f, 500f, deltaPox.x) * 2f - 1f, Mathf.InverseLerp(-500f, 500f, deltaPox.y) * 2f - 1f);
                     graphic.lookDir = Vector2.Lerp(graphic.lookDir, targetLookDir, 0.25f);

@@ -7,9 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ShadedCanopy.SaveDatas
+namespace ShadedCanopy.Iterators.MechIterator
 {
-    public record SCDeathPersistentData : JsonSaveData<SCDeathPersistentData> //回头手写il生成
+    public record MechIteratorSaveData : JsonSaveData<MechIteratorSaveData> //回头手写il生成
     {
         public int meets;                      //见面次数
         public bool hasPermission;             //是否被迭代器给予许可
@@ -23,21 +23,22 @@ namespace ShadedCanopy.SaveDatas
     }
 
 
-    internal class SCDeathPersistentManager : DeathPersistentSaveManager<SCDeathPersistentManager, SCDeathPersistentData>
+    internal class MechIteratorMiscSaveManager : MiscWorldSaveManager<MechIteratorMiscSaveManager, MechIteratorSaveData>
     {
-        public override string SaveKey => "ShadedCanopy.Shimmer.Death";
+        public override string SaveKey => "ShadedCanopy.MechIterator.Misc";
 
         public override bool IsAvaiableForThisSession(StoryGameSession session) => session.characterStats.name == SCEnums.SlugStateName.Shimmer;
 
-        protected override void SaveToData(bool isDied, bool isQuit)
-        {
-            if(isDied || isQuit)
-                _data = _oldData;
-        }
 
         public override void RainCycleTick(RainWorldGame game)
         {
-            base.RainCycleTick(game);
+            if (Data.meetThisCycle)
+                Data.meets++;
+        }
+
+        protected override void SaveToData()
+        {
+            //不用写这一块
         }
     }
 }

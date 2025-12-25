@@ -50,7 +50,19 @@ namespace ShadedCanopy.Iterators.MechIterator
         public void Interrupt()
         {
             events[0].Reset();
+            iterator.TryTurnOffCurrentLabel();
             paused = true;
+        }
+
+        public void Recover()
+        {
+            paused = false;
+        }
+
+        public void InterruptWithRecoverConv(MechInteratorConversationEvent newEvent)
+        {
+            Interrupt();
+            events.Insert(0, newEvent);
         }
 
         public class MechInteratorConversationEvent

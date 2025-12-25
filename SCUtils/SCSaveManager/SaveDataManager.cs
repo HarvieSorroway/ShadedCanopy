@@ -82,7 +82,7 @@ namespace SCUtils.SCSaveManager
         }
 
 
-        public override void Save(bool isDied, bool isQuit)
+        public override sealed void Save(bool isDied, bool isQuit)
         {
           
             if (!IsAvailable || _session is null) return;
@@ -134,7 +134,7 @@ namespace SCUtils.SCSaveManager
             _session = newSession;
         }
 
-        public override void Save(bool isDied, bool isQuit)
+        public override sealed void Save(bool isDied, bool isQuit)
         {
             try
             {

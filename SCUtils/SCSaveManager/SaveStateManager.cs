@@ -17,9 +17,10 @@ namespace SCUtils.SCSaveManager
         {
             foreach(var type in AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.SafeGetTypes()))
             {
-                if(type.IsAssignableFrom(typeof(ISaveManager)))
+                if(type.IsAssignableFrom(typeof(ISaveManager)) && !type.IsAbstract)
                 {
-                    _allManagers.Add((ISaveManager)type.GetProperty("Instance")?.GetValue(null));
+                    if((ISaveManager)type.GetProperty("Instance")?.GetValue(null) is { } manager)
+                        _allManagers.Add(manager);
                 }
             }
         }

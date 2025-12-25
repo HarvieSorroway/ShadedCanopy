@@ -1,5 +1,6 @@
 ﻿using RWCustom;
 using SCUtils.RwTasks;
+using SlugBase.SaveData;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -211,16 +212,24 @@ namespace SCUtils
             return new Color(r / 255f, g / 255f, b / 255f);
         }
 
-        public static Type[] SafeGetTypes(this Assembly assembly)
+
+        public static T ForceGet<T>(this SlugBaseSaveData data, string key) where T : new()
         {
-            Type[] types = null;
+            if (!data.TryGet(key, out T d))
+                d = new T();
+            return d;
+        }
+
+        public static IEnumerable<Type> SafeGetTypes(this Assembly assembly)
+        {
+            IEnumerable<Type> types = null;
             try
             {
                 types = assembly.GetTypes();
             }
             catch (ReflectionTypeLoadException e)
             {
-                types = e.Types.Where(i => i != null).ToArray();
+                types = e.Types.Where(i => i != null);
             }
             return types;
         }

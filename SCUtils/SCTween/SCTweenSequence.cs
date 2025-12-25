@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SCUtils.SCTween
 {
     public class SCTweenSequence
     {
-        List<SCTweenContextBase> _tweens = new List<SCTweenContextBase>();
+        List<ISCTweenContext> _tweens = new List<ISCTweenContext>();
         Action onFinishCallBack;
 
-        public SCTweenSequence Add(SCTweenContextBase context)
+        public SCTweenSequence Add(ISCTweenContext context)
         {
             _tweens.Add(context);
             return this;
@@ -26,11 +27,11 @@ namespace SCUtils.SCTween
             return this;
         }
 
-        public async RwTasks.RwTask RunAsync()
+        public async RwTasks.RwTask RunAsync(CancellationToken token = default)
         {
             foreach (var tween in _tweens)
             {
-                await tween.RunAsync();
+                await tween.RunAsync(token);
             }
             onFinishCallBack?.Invoke();
         }

@@ -2,6 +2,7 @@
 using SCUtils.DevToolUtils;
 using SCUtils.RwTasks;
 using SCUtils.SCDevTools;
+using SCUtils.SCSaveManager;
 using SCUtils.SCTween;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,8 @@ namespace SCUtils
             logger = manualLogSource;
             PlacedObjectExt.Init();
             RwTaskHooks.Init();
+            SaveStateManager.Init();
+
             try
             {
                 SCDevToolsEntry.Init();

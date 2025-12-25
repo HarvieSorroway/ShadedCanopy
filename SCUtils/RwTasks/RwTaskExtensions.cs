@@ -99,6 +99,54 @@ namespace SCUtils.RwTasks
         }
 
         /// <summary>
+        /// 注册在任务完成时调用的后续操作。
+        /// </summary>
+        public static async RwTask<TResult> ContinueWith<T, TResult>(
+        this RwTask<T> task,
+        Func<T, TResult> continuation)
+        {
+            var result = await task;
+            var nextResult = continuation(result);
+            return nextResult;
+        }
+
+        /// <summary>
+        /// 注册在任务完成时调用的后续操作。
+        /// </summary>
+        public static async RwTask ContinueWith<T>(
+        this RwTask<T> task,
+        Action<T> continuation)
+        {
+            var result = await task;
+            continuation(result);
+        }
+
+
+        /// <summary>
+        /// 注册在任务完成时调用的后续操作。
+        /// </summary>
+        public static async RwTask<TResult> ContinueWith<TResult>(
+        this RwTask task,
+        Func<TResult> continuation)
+        {
+            await task;
+            var nextResult = continuation();
+            return nextResult;
+        }
+
+
+        /// <summary>
+        /// 注册在任务完成时调用的后续操作。
+        /// </summary>
+        public static async RwTask ContinueWith(
+        this RwTask task,
+        Action continuation)
+        {
+            await task;
+            continuation();
+        }
+
+        /// <summary>
         /// 将当前的 <see cref="RwTask{T}"/> 转换为标准的 <see cref="Task{T}"/>。
         /// </summary>
         /// <typeparam name="T">任务结果的类型。</typeparam>

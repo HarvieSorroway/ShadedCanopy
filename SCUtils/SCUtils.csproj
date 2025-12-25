@@ -32,6 +32,9 @@
     <Reference Include="rain-world-imgui-api">
       <HintPath>..\includings\rain-world-imgui-api.dll</HintPath>
     </Reference>
+    <Reference Include="SlugBase">
+      <HintPath>..\includings\SlugBase.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\includings\UnityEngine.dll</HintPath>
     </Reference>

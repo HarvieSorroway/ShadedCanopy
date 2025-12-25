@@ -4,20 +4,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
 namespace SCUtils.SCTween
 {
-    public class SCTweenContextBase
+    public interface ISCTweenContext
     {
-        public virtual async RwTask RunAsync()
-        {
-        }
+        RwTask RunAsync(CancellationToken token = default);
     }
 
-    public class SCTweenContext<T> : SCTweenContextBase
-        {
+    public class SCTweenContext<T> : ISCTweenContext
+    {
         public readonly Action<T> setValueFunction;
         public readonly T From, To;
         public int frames;
@@ -52,10 +51,13 @@ namespace SCUtils.SCTween
             return this;
         }
         
-        public override async RwTask RunAsync()
+        public async RwTask RunAsync(CancellationToken token = default)
         {
             for(int i = 0; i <= frames; i++)
             {
+                if (token.IsCancellationRequested)
+                    break;
+
                 float t = (float)i / frames;
                 if (easeFunction != null)
                     t = easeFunction(t);

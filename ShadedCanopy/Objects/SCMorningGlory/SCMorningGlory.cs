@@ -82,7 +82,24 @@ namespace ShadedCanopy.Objects.SCMorningGlory
             nodeMass[0] = float.MaxValue;
             nodeMass[this.nodeCount - 1] = SCMorningGloryProperty.StalkMainChunkPhysicalProperty.mass;
             // 个性化/叶子罩子
-            this.personalization = new Personalization(this.abstractPhysicalObject.ID.RandomSeed, this.nodeCount);
+            
+            if (!this.abstractMorningGlory.isConsumed)
+            {
+                AbstractPhysicalObject abo = this.abstractMorningGlory.abstractFruit;
+                if (abo.realizedObject != null)
+                {
+                    abo.realizedObject.Destroy();
+                    this.room.RemoveObject(abo.realizedObject);
+                    abo.realizedObject = null;
+                }
+                abo.realizedObject = new SCMorningGloryFruit(abo, this);
+                this.hangingFruit = abo.realizedObject as SCMorningGloryFruit;
+            }
+            else
+            {
+                this.segmentLength *= ModifiableSCMorningGloryProperty.scMorningGlory.stalkNoFruitShirink;
+            }
+            this.personalization = new Personalization(this.abstractPhysicalObject.ID.RandomSeed, this.nodeCount, this.abstractMorningGlory.isConsumed);
             this.cover = new SCMorningGloryCover3D(
                 this,
                 this.personalization.coverPetals,
@@ -90,6 +107,13 @@ namespace ShadedCanopy.Objects.SCMorningGlory
                 ModifiableSCMorningGloryProperty.scMorningGlory.coverHeight,
                 ModifiableSCMorningGloryProperty.scMorningGlory.coverWidth
             );
+            this.cover.widthCurvePct = ModifiableSCMorningGloryProperty.scMorningGlory.coverWidthCurvePct;
+            this.cover.heightCurvePct = ModifiableSCMorningGloryProperty.scMorningGlory.coverHeightCurvePct;
+            if (this.abstractMorningGlory.isConsumed)
+            {
+                this.cover.width *= ModifiableSCMorningGloryProperty.scMorningGlory.coverNoFruitWidthMultiplier;
+                this.cover.height *= ModifiableSCMorningGloryProperty.scMorningGlory.coverNoFruitHeightMultiplier;
+            }
             this.cover.spinOffset = this.personalization.coverSpinOffset;
             this.leaves = new SCMorningGloryLeaf[this.personalization.leafCount];
             for (int i = 0; i < this.personalization.leafCount; ++i)
@@ -106,23 +130,7 @@ namespace ShadedCanopy.Objects.SCMorningGlory
                     this.personalization.leafAngle[i]
                     );
             }
-
-            if (!this.abstractMorningGlory.isConsumed)
-            {
-                AbstractPhysicalObject abo = this.abstractMorningGlory.abstractFruit;
-                if (abo.realizedObject != null)
-                {
-                    abo.realizedObject.Destroy();
-                    this.room.RemoveObject(abo.realizedObject);
-                    abo.realizedObject = null;
-                }
-                abo.realizedObject = new SCMorningGloryFruit(abo, this);
-                this.hangingFruit = abo.realizedObject as SCMorningGloryFruit;
-            } else
-            {
-                this.cover.width *= ModifiableSCMorningGloryProperty.scMorningGlory.coverNoFruitWidthMultiplier;
-                this.cover.height *= ModifiableSCMorningGloryProperty.scMorningGlory.coverNoFruitHeightMultiplier;
-            }
+            
             // 设置一串bodychunk
             this.nodeChunkIdx = new int[this.nodeCount];
             for (int i = 0; i < this.nodeCount; ++i)
@@ -138,6 +146,10 @@ namespace ShadedCanopy.Objects.SCMorningGlory
             for (int i = 0; i < this.nodeCount; ++i)
             {
                 this.bodyChunks[this.nodeChunkIdx[i]] = new BodyChunk(this, i, nodePos[i], SCMorningGloryProperty.StalkMainChunkPhysicalProperty.rad, nodeMass[i]);
+                if (i != 0)
+                {
+                    this.bodyChunks[this.nodeChunkIdx[i]].collideWithObjects = false;
+                }
             }
             this.bodyChunkConnections = new BodyChunkConnection[this.nodeCount - 1];
             for (int i = 0; i < this.nodeCount - 1; ++i)
@@ -193,8 +205,6 @@ namespace ShadedCanopy.Objects.SCMorningGlory
                     }
                 }
             }
-            this.cover.widthCurvePct = ModifiableSCMorningGloryProperty.scMorningGlory.coverWidthCurvePct;
-            this.cover.heightCurvePct = ModifiableSCMorningGloryProperty.scMorningGlory.coverHeightCurvePct;
             this.cover.Update();
             foreach (SCMorningGloryLeaf leaf in this.leaves)
             {
@@ -233,7 +243,17 @@ namespace ShadedCanopy.Objects.SCMorningGlory
                 leafSpriteCount += leaf.spriteCount;
             }
             sLeaser.sprites = new FSprite[2 + this.cover.spriteCount + leafSpriteCount];
-            sLeaser.sprites[0] = TriangleMesh.MakeLongMesh(this.nodeCount - 1, false, true);
+            TriangleMesh mesh = TriangleMesh.MakeLongMesh(this.nodeCount - 1, false, true);
+            mesh.shader = RWCustom.Custom.rainWorld.Shaders["SCMorningGlory"];
+            for (int i = 0; i < this.nodeCount - 1; ++i)
+            {
+                for (int j = 0; j < 2; ++j)
+                {
+                    mesh.UVvertices[i * 4 + j * 2] = new Vector2(0f, 0.5f);
+                    mesh.UVvertices[i * 4 + j * 2 + 1] = new Vector2(1f, 0.5f);
+                }
+            }
+            sLeaser.sprites[0] = mesh;
             // 线
             TriangleMesh.Triangle[] trig =
             {
@@ -268,6 +288,10 @@ namespace ShadedCanopy.Objects.SCMorningGlory
                 trigMesh.MoveVertice(vertOffset + 2, posDown - d * (ModifiableSCMorningGloryProperty.scMorningGlory.stalkWidth / 2 + personalization.stalkWidthOffset[i].x) - camPos);
                 trigMesh.MoveVertice(vertOffset + 3, posDown + d * (ModifiableSCMorningGloryProperty.scMorningGlory.stalkWidth / 2 + personalization.stalkWidthOffset[i].y) - camPos);
             }
+            trigMesh._renderLayer?._material.SetFloat("_GradientLength", ModifiableSCMorningGloryProperty.scMorningGlory.stalkGradientLength);
+            trigMesh._renderLayer?._material.SetFloat("_DarknessStart", 0);
+            trigMesh._renderLayer?._material.SetFloat("_DarknessEnd", ModifiableSCMorningGloryProperty.scMorningGlory.stalkGradientDarknessMax);
+
             if (this.hangingFruit == null)
             {
                 sLeaser.sprites[1].isVisible = false;
@@ -337,12 +361,11 @@ namespace ShadedCanopy.Objects.SCMorningGlory
             {
                 fsp.RemoveFromContainer();
             }
-
+            foreach (SCMorningGloryLeaf leaf in this.leaves)
+                leaf.AddToContainer(sLeaser, rCam);
             newContatiner.AddChild(sLeaser.sprites[0]);
             linkContainer.AddChild(sLeaser.sprites[1]);
             this.cover.AddToContainer(sLeaser, rCam);
-            foreach (SCMorningGloryLeaf leaf in this.leaves)
-                leaf.AddToContainer(sLeaser, rCam);
         }
 
 
@@ -357,7 +380,7 @@ namespace ShadedCanopy.Objects.SCMorningGlory
             public float[] leafAngle;
             public Vector2[] leafSize;
             public float coverSpinOffset;
-            public Personalization(int randomSeed, int stalkNodeCount)
+            public Personalization(int randomSeed, int stalkNodeCount, bool isConsumed)
             {
                 UnityEngine.Random.State state = UnityEngine.Random.state;
                 UnityEngine.Random.InitState(randomSeed);
@@ -382,7 +405,7 @@ namespace ShadedCanopy.Objects.SCMorningGlory
                 List<int> leafPos = new List<int>();
                 for (int i = 0; i < leafAvailPos * 2; i++)
                 {
-                    if (UnityEngine.Random.value < SCMorningGloryProperty.leafProbability)
+                    if (UnityEngine.Random.value < SCMorningGloryProperty.leafProbability / 2)
                     {
                         leafPos.Add(i);
                     }
@@ -398,6 +421,22 @@ namespace ShadedCanopy.Objects.SCMorningGlory
                         UnityEngine.Random.Range(ModifiableSCMorningGloryProperty.scMorningGlory.leafLengthMin, ModifiableSCMorningGloryProperty.scMorningGlory.leafLengthMax)
                     );
                     this.leafAngle[i] = UnityEngine.Random.Range(ModifiableSCMorningGloryProperty.scMorningGlory.leafWidthMax, ModifiableSCMorningGloryProperty.scMorningGlory.leafAngleMax);
+                }
+                if (isConsumed)
+                {
+                    color = Color.Lerp(color, ModifiableSCMorningGloryProperty.scMorningGlory.stalkNoFruitColor, ModifiableSCMorningGloryProperty.scMorningGlory.stalkNoFruitColorChange);
+                    for (int i = 0; i < leafCount; i++)
+                    {
+                        this.leafAngle[i] *= ModifiableSCMorningGloryProperty.scMorningGlory.leafNoFruitAngleMultipler;
+                        this.leafSize[i] *= ModifiableSCMorningGloryProperty.scMorningGlory.leafNoFruitScale;
+                    }
+                    for (int i = 1; i < stalkNodeCount - 1; i++)
+                    {
+                        float sign = (i % 2 == 0) ? 1f : -1f;
+                        float rnd = UnityEngine.Random.value;
+                        float multipler = RWCustom.Custom.InverseLerpUnclamped(1, stalkNodeCount - 2, i);
+                        this.stalkWidthOffset[i] += new float2(1f, -1f) * sign * rnd * multipler * ModifiableSCMorningGloryProperty.scMorningGlory.stalkNoFruitMaxFold;
+                    }
                 }
                 UnityEngine.Random.state = state;
             }

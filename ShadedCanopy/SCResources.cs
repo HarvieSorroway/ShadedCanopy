@@ -21,6 +21,10 @@ namespace ShadedCanopy
 
             string path = AssetManager.ResolveFilePath("AssetBundles/additive");
             AssetBundle ab = AssetBundle.LoadFromFile(path);
+
+            AssetBundle abna = AssetBundle.LoadFromFile(AssetManager.ResolveFilePath("AssetBundles/nabundle"));
+            Objects.SCMorningGlory.SCMorningGloryHooks.LoadResources(abna);
+
             Custom.rainWorld.Shaders.Add(AdditiveDefaultShaderName, FShader.CreateShader("AdditiveDefault", ab.LoadAsset<Shader>("assets/myshader/dronemaster/additivedefault.shader")));
 
             Blur40Atlas = Futile.atlasManager.LoadImage("atlases/blur40").name;

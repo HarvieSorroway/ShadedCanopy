@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace ShadedCanopy.Objects.SCMorningGlory
 {
     internal static class SCMorningGloryHooks
     {
+        public static readonly string MorningGloryFruitSpriteName = "atlases/MorningGlory/MorningGloryFruit";
         static bool _Inited = false;
         public static void Hook()
         {
@@ -21,6 +23,26 @@ namespace ShadedCanopy.Objects.SCMorningGlory
             On.SaveState.AbstractPhysicalObjectFromString += SaveState_AbstractPhysicalObjectFromString;
 
             _Inited = true;
+        }
+        public static void LoadResources(AssetBundle ab)
+        {
+            FShader scmgShader = FShader.CreateShader("SCMorningGlory", ab.LoadAsset<Shader>("MorningGlory.shader"));
+            // 通过shader的名字检测是不是合法shader
+            if (scmgShader.shader == null || scmgShader.shader.name.Contains("Hidden/InternalErrorShader"))
+            {
+                String errmsg = $"SCMG failed load shader {scmgShader.shader}";
+                SCPlugin.Logger.LogFatal(errmsg);
+                throw new ArgumentNullException(errmsg);
+            }
+            RWCustom.Custom.rainWorld.Shaders["SCMorningGlory"] = scmgShader;
+            for (int i = 0; i < 2; ++i)
+            {
+                for (int j = 0; j < 4; ++j)
+                {
+                    String name = MorningGloryFruitSpriteName + (i == 0 ? 'A' : 'B') + j.ToString();
+                    Futile.atlasManager.LoadImage(name);
+                }
+            }
         }
 
         private static AbstractPhysicalObject SaveState_AbstractPhysicalObjectFromString(On.SaveState.orig_AbstractPhysicalObjectFromString orig, World world, string objString)

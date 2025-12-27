@@ -28,11 +28,11 @@ namespace ShadedCanopy.Objects.SCMorningGlory
             public static float rollingFriction = 0.8f;
             public static float rollingRotationSpeedRatio = 0.1f;
         }
-        public static int fruitBites = 3;
+        public static int fruitBites = 4;
         public static int fruitFoodPoints = 3;
         public static string fruitContainerBeforePick = "Background";
         public static string fruitContainerAfterPick = "Items";
-        public static float fruitSpriteScale = 1.3f;
+        public static float fruitSpriteScale = 0.8f;
         public static float fruitLightAlpha = 0.3f;
         public static float fruitLightRad = 80f;
         public static float fruitLightAlphaGrabbed = 0.5f;
@@ -64,7 +64,7 @@ namespace ShadedCanopy.Objects.SCMorningGlory
         //public static float leafAngleMax = 40f;
         //public static float leafSizeMin = 7f;
         //public static float leafSizeMax = 12f;
-        public static float leafProbability = 0.2f;
+        public static float leafProbability = 0.4f;
         public static string stalkContainer = "Background";
         public static string fruitLinkerContainer = "Midground";
 
@@ -72,6 +72,125 @@ namespace ShadedCanopy.Objects.SCMorningGlory
     }
     public static class ModifiableSCMorningGloryProperty
     {
+        [SCDevToolsInspectType("Root.TestMorningGlory", "TestMorningGlory")]
+        public class _SCMorningGlory
+        {
+            [SCDevToolsInspectValue]
+            public float stalkSegmentMaxLength = 25f;
+            //[SCDevToolsInspectValue]
+            //public int stalkSegmentCount = 10;
+            [SCDevToolsInspectValue]
+            public int stalkSegmentMinCount = 3;
+            [SCDevToolsInspectValue]
+            public float stalkNodeMass = 0.3f;
+            [SCDevToolsInspectValue]
+            public float stalkFlexibility = 1.1f; // 0.35f;
+            [SCDevToolsInspectValue]
+            public float stalkFruitDistance = 15f;
+            [SCDevToolsInspectValue]
+            public float stalkSegmentShrink = 0.6f;
+
+            //[SCDevToolsInspectValue]
+            public int coverPetalsMin = 5;
+            //[SCDevToolsInspectValue]
+            public int coverPetalsMax = 7;
+            //[SCDevToolsInspectValue]
+            public int coverNodeCount = 6;
+            //[SCDevToolsInspectValue]
+            public float coverHeight = 20f;
+            //[SCDevToolsInspectValue]
+            public float coverWidth = 15f;
+            //[SCDevToolsInspectValue]
+            public float coverLiftDistance = 5f;
+            [SCDevToolsInspectValue]
+            public float coverHeightCurvePct = 0.2f;
+            [SCDevToolsInspectValue]
+            public float coverWidthCurvePct = 0.3f;
+            //[SCDevToolsInspectValue]
+            public float coverDistrubFlipMultipler = 2f;
+            //[SCDevToolsInspectValue]
+            public float coverDistrubSpinMultipler = 6f;
+            //[SCDevToolsInspectValue]
+            public float coverAutoDisturbProb = 0.1f;
+            [SCDevToolsInspectValue]
+            public float coverDistrubMaxForce = 2f;
+
+
+            [SCDevToolsInspectValue]
+            public float coverNoFruitWidthMultiplier = 0.6f;
+            [SCDevToolsInspectValue]
+            public float coverNoFruitHeightMultiplier = 1.3f;
+
+
+            [SCDevToolsInspectValue]
+            public int fruitPickRequireTicks = 30;
+            [SCDevToolsInspectValue]
+            public float stalkExtraPlayerElastic = 0.4f;
+            [SCDevToolsInspectValue]
+            public float stalkMaxJumpBoost = 8f;
+            [SCDevToolsInspectValue]
+            public float stalkMaxJumpBoostLenghPct = 0.3f;
+
+            [SCDevToolsInspectValue]
+            public float leafWidthMin = 0.3f;
+            [SCDevToolsInspectValue]
+            public float leafWidthMax = 0.6f;
+            [SCDevToolsInspectValue]
+            public float leafLengthMin = 1f;
+            [SCDevToolsInspectValue]
+            public float leafLengthMax = 1.3f;
+            [SCDevToolsInspectValue]
+            public float leafAngleMin = 40f;
+            [SCDevToolsInspectValue]
+            public float leafAngleMax = 75f;
+            //[SCDevToolsInspectValue]
+            public float leafAutoDistrubProb = 0.1f;
+            //[SCDevToolsInspectValue]
+            public float leafDistrubMultipler = 1f;
+
+            [SCDevToolsInspectValue]
+            public float stalkNoFruitShirink = 0.5f;
+            [SCDevToolsInspectValue]
+            public float leafNoFruitAngleMultipler = 0.4f;
+            [SCDevToolsInspectValue]
+            public float leafNoFruitScale = 0.8f;
+            [SCDevToolsInspectValue]
+            public float stalkNoFruitColorChange = 0.85f;
+            [SCDevToolsInspectValue]
+            public float stalkNoFruitMaxFold = 2f;
+
+
+            [SCDevToolsInspectValue]
+            public float fruitConnectAngle = 60f;
+            [SCDevToolsInspectValue]
+            public float fruitConnectDistance = 6f;
+            [SCDevToolsInspectValue]
+            public float fruitConnectTipWidth = 2f;
+
+            [SCDevToolsInspectValue]
+            public float stalkWidth = 3f;
+            //[SCDevToolsInspectValue]
+            public float stalkWidthOffsetMin = -1.15f;
+            //[SCDevToolsInspectValue]
+            public float stalkWidthOffsetMax = 1.15f;
+
+            [SCDevToolsInspectValue]
+            public float coverGradientLength = 1f;
+            [SCDevToolsInspectValue]
+            public float coverGradientDarknessMax = 0.3f;
+
+            [SCDevToolsInspectValue]
+            public float stalkGradientLength = 1f;
+            [SCDevToolsInspectValue]
+            public float stalkGradientDarknessMax = 0.1f;
+
+            // 颜色战地过大 最好放最后
+            public Color stalkColorRangeLeft = RWCustom.Custom.hexToColor("018C52");
+            public Color stalkColorRangeRight = RWCustom.Custom.hexToColor("013E32");
+            [SCDevToolsInspectValue]
+            public Color stalkNoFruitColor = RWCustom.Custom.hexToColor("58561E");
+
+        }
         //[SCDevToolsInspectType("Root", "TestMorningGlory")]
         //public class _SCMorningGlory
         //{
@@ -82,7 +201,7 @@ namespace ShadedCanopy.Objects.SCMorningGlory
         //    [SCDevToolsInspectValue]
         //    public float stalkSegmentShrink = 0.8f;
         //}
-        internal static SCUtils.SCDevTools._SCMorningGlory scMorningGlory = new();
+        internal static _SCMorningGlory scMorningGlory = new();
     };
 
 }

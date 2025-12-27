@@ -139,7 +139,9 @@ namespace ShadedCanopy.Objects.SCMorningGlory
                     trig[j * 2] = new TriangleMesh.Triangle(j, j + 1, j + this.nodeCount);
                     trig[j * 2 + 1] = new TriangleMesh.Triangle(j + 1, j + this.nodeCount, j + this.nodeCount + 1);
                 }
-                spriteLeaser.sprites[i + this.startIdx] = new TriangleMesh("Futile_White", trig, true);
+                TriangleMesh trigMesh = new TriangleMesh("Futile_White", trig, true);
+                trigMesh.shader = RWCustom.Custom.rainWorld.Shaders["SCMorningGlory"];
+                spriteLeaser.sprites[i + this.startIdx] = trigMesh;
             }
         }
 
@@ -219,12 +221,20 @@ namespace ShadedCanopy.Objects.SCMorningGlory
                     mesh.MoveVertice(j, va + posOffset);
                     mesh.MoveVertice(j + this.nodeCount, vb + posOffset);
                 }
+                for (int j = 0; j < this.nodeCount; ++j)
+                {
+                    mesh.UVvertices[j] = new Vector2(0, Mathf.InverseLerp(this.vertices[0][0].y, this.vertices[0][this.nodeCount - 1].y, this.vertices[0][j].y));
+                    mesh.UVvertices[j + this.nodeCount] = new Vector2(1, Mathf.InverseLerp(this.vertices[0][0].y, this.vertices[0][this.nodeCount - 1].y, this.vertices[0][j].y));
+                }
                 Color color = Color.Lerp(this.owner.personalization.color, (i % 2 == 0 ? Color.white : Color.black), 0.1f);
                 if (!inFront)
                 {
                     color = Color.Lerp(color, Color.white, 0.2f);
                 }
                 mesh.color = color;
+                mesh._renderLayer?._material.SetFloat("_GradientLength", ModifiableSCMorningGloryProperty.scMorningGlory.coverGradientLength);
+                mesh._renderLayer?._material.SetFloat("_DarknessStart", 0);
+                mesh._renderLayer?._material.SetFloat("_DarknessEnd", ModifiableSCMorningGloryProperty.scMorningGlory.coverGradientDarknessMax);
             }
         }
     }

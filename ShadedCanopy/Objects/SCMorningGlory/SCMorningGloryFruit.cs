@@ -200,8 +200,8 @@ namespace ShadedCanopy.Objects.SCMorningGlory
         public void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam)
         {
             sLeaser.sprites = new FSprite[2];
-            sLeaser.sprites[0] = new FSprite("DangleFruit0A", true);
-            sLeaser.sprites[1] = new FSprite("DangleFruit0B", true);
+            sLeaser.sprites[0] = new FSprite($"{SCMorningGloryHooks.MorningGloryFruitSpriteName}A0", true);
+            sLeaser.sprites[1] = new FSprite($"{SCMorningGloryHooks.MorningGloryFruitSpriteName}B0", true);
             sLeaser.sprites[0].scale = SCMorningGloryProperty.fruitSpriteScale;
             sLeaser.sprites[1].scale = SCMorningGloryProperty.fruitSpriteScale;
             this.AddToContainer(sLeaser, rCam);
@@ -224,9 +224,9 @@ namespace ShadedCanopy.Objects.SCMorningGlory
                 this.AddToContainer(sLeaser, rCam);
                 this.containerUpdated = false;
             }
-            int atlasID = Mathf.Min(SCMorningGloryProperty.fruitBites - this.BitesLeft, 2);
-            sLeaser.sprites[0].element = Futile.atlasManager.GetElementWithName($"DangleFruit{atlasID}A");
-            sLeaser.sprites[1].element = Futile.atlasManager.GetElementWithName($"DangleFruit{atlasID}B");
+            int atlasID = Mathf.Min(SCMorningGloryProperty.fruitBites - this.BitesLeft, 3);
+            sLeaser.sprites[0].element = Futile.atlasManager.GetElementWithName($"{SCMorningGloryHooks.MorningGloryFruitSpriteName}A{atlasID}");
+            sLeaser.sprites[1].element = Futile.atlasManager.GetElementWithName($"{SCMorningGloryHooks.MorningGloryFruitSpriteName}B{atlasID}");
             foreach (var sprite in sLeaser.sprites)
             {
                 sprite.x = pos.x - camPos.x;

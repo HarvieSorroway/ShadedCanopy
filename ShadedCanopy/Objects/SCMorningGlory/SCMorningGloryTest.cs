@@ -1,4 +1,6 @@
 ﻿using IL.Watcher;
+using RWCustom;
+using SCUtils.RwTasks;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -103,6 +105,29 @@ namespace ShadedCanopy.Objects.SCMorningGlory
                 self.room.abstractRoom.AddEntity(abo);
                 self.room.abstractRoom.AddEntity(abo.abstractFruit);
                 abo.RealizeInRoom();
+                Task task = TorturingSCMG(abo as SCMorningGlory.AbstractMorningGlory);
+            }
+        }
+        public static async Task TorturingSCMG(SCMorningGlory.AbstractMorningGlory target)
+        {
+            int i = 0;
+            WeakReference<SCMorningGlory.AbstractMorningGlory> weakRef = new(target);
+            target = null;
+            while (true)
+            {
+                await RwTask.DelayFrames(40);
+                if (!weakRef.TryGetTarget(out target))
+                    break;
+                if (target.realizedObject is SCMorningGlory scmg)
+                {
+                    if (scmg.hangingFruit == null)
+                        break;
+                    i = (i + 1) % 4;
+                    IntVector2 iv = RWCustom.Custom.fourDirections[i];
+                    if (scmg.hangingFruit != null)
+                        scmg.firstChunk.vel += new Vector2(iv.x, iv.y) * 100f;
+                }
+                target = null;
             }
         }
     }

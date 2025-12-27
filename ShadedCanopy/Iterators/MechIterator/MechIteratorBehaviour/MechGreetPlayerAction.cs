@@ -11,7 +11,7 @@ namespace ShadedCanopy.Iterators.MechIterator
 {
     internal class MechGreetPlayerAction : MechBehavAction
     {
-        bool conversationAdded, conversationInterrupted;
+        bool conversationAdded, conversationInterruptNeedRestore;
 
 
         public MechGreetPlayerAction(MechIteratorBehaviour owner) : base(owner)
@@ -20,12 +20,8 @@ namespace ShadedCanopy.Iterators.MechIterator
 
         public override void Update()
         {
-            var noticedPlayerPos = Iterator.room.game.FirstRealizedPlayer.firstChunk.pos;
-            Iterator.graphic.lookAtPos = noticedPlayerPos;
-
-            if (!owner.greetedPlayer)
-                owner.greetedPlayer = true;
-
+            var output = PlayerDistance();
+            Iterator.graphic.lookAtPos = output.pos;
 
             if (Conversation == null && !conversationAdded && Iterator.graphic.ReadyForBehaviourAction)
             {
@@ -46,15 +42,20 @@ namespace ShadedCanopy.Iterators.MechIterator
             }
 
 
-            if (Vector2.Distance(noticedPlayerPos, Iterator.pos) > 500f)
+            if (output.distance > 500f)
             {
                 owner.noticedPlayer = null;
                 conversationAdded = false;
 
                 if (Conversation != null && !Conversation.slatedForDeletion)
                 {
-                    Conversation.InterruptWithRecoverConv(new MechIteratorConversationTextEvent(Conversation, 0, "...欢迎回来，请允许我继续"));
-                    owner.greetedPlayer = false;
+                    if (conversationInterruptNeedRestore)
+                        Conversation.InterruptWithRecoverConv(new MechIteratorConversationTextEvent(Conversation, 0, "...欢迎回来，请允许我继续"));
+                    else
+                    {
+                        Conversation.Destroy();
+                        Iterator.TryTurnOffCurrentLabel();
+                    }
                 }
 
                 Iterator.graphic.RequestSwitchAnimation(MechIteratorGraphic.AnimationID.Idle);
@@ -67,10 +68,11 @@ namespace ShadedCanopy.Iterators.MechIterator
             Conversation = new MechIteratorConversation(Iterator);
             if (MiscData.meets == 0)//只在获得许可后第一次见面时播放
             {
+                conversationInterruptNeedRestore = true;
                 Conversation.AddEvent(new MechIteratorConversationTextEvent(Conversation, 40, "...检测到计划外用户，已针对计划外用户校准语言系统"));
                 Conversation.AddEvent(new MechIteratorConversationTextEvent(Conversation, 80, "...检测到计划外用户无法处理输入系统\n   将尝试生成全新适应性输入方案"));
                 Conversation.AddEvent(new MechIteratorConversationPauseEvent(Conversation, 0, 80));
-                Conversation.AddEvent(new MechIteratorConversationTextEvent(Conversation, 80, "...初始化已完成         \n   欢迎[用户#1BF52]"));
+                Conversation.AddEvent(new MechIteratorConversationTextEvent(Conversation, 80, $"...初始化已完成         \n   欢迎[{PlayernName}]"));
                 Conversation.AddEvent(new MechIteratorClearLabelEvent(Conversation, 80));
             }
             else
@@ -78,15 +80,15 @@ namespace ShadedCanopy.Iterators.MechIterator
                 int selected = UnityEngine.Random.Range(0, 2);
                 if(selected == 0)
                 {
-                    Conversation.AddEvent(new MechIteratorConversationTextEvent(Conversation, 40, "...欢迎回来，[用户#1BF52]"));
+                    Conversation.AddEvent(new MechIteratorConversationTextEvent(Conversation, 40, $"...欢迎回来，[{PlayernName}]"));
                 }
                 else if(selected == 1)
                 {
-                    Conversation.AddEvent(new MechIteratorConversationTextEvent(Conversation, 40, "...检测到先前用户资料，欢迎回来，[用户#1BF52]"));
+                    Conversation.AddEvent(new MechIteratorConversationTextEvent(Conversation, 40, $"...检测到先前用户资料，欢迎回来，[{PlayernName}]"));
                 }
                 else if(selected == 2)
                 {
-                    Conversation.AddEvent(new MechIteratorConversationTextEvent(Conversation, 40, "...欢迎回来，[用户#1BF52]，很高兴再次见到您"));
+                    Conversation.AddEvent(new MechIteratorConversationTextEvent(Conversation, 40, $"...欢迎回来，[{PlayernName}]，很高兴再次见到您"));
                 }
                 Conversation.AddEvent(new MechIteratorClearLabelEvent(Conversation, 80));
             }
@@ -105,11 +107,11 @@ namespace ShadedCanopy.Iterators.MechIterator
             }
             else if(selected == 1)
             {
-                Conversation.AddEvent(new MechIteratorConversationTextEvent(Conversation, 40, "...欢迎回来，[用户#1BF52]，需要我为您做些什么吗？"));
+                Conversation.AddEvent(new MechIteratorConversationTextEvent(Conversation, 40, $"...欢迎回来，[{PlayernName}]，需要我为您做些什么吗？"));
             }
             else if(selected == 2)
             {
-                Conversation.AddEvent(new MechIteratorConversationTextEvent(Conversation, 40, "...很高兴再次见到您，[用户#1BF52]，正在分析可能的需求"));
+                Conversation.AddEvent(new MechIteratorConversationTextEvent(Conversation, 40, $"...很高兴再次见到您，[{PlayernName}]，正在分析可能的需求"));
             }
             Conversation.AddEvent(new MechIteratorClearLabelEvent(Conversation, 80));
             conversationAdded = true;

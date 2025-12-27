@@ -21,9 +21,9 @@ namespace ShadedCanopy.Iterators.MechIterator
                 owner.SwitchState(MechState.WaitForPlayer);
                 return;
             }
-            var noticedPlayerPos = Iterator.room.game.FirstRealizedPlayer.firstChunk.pos;
-            Iterator.graphic.lookAtPos = noticedPlayerPos;
-            if (Vector2.Distance(noticedPlayerPos, Iterator.pos) > 500f)
+            var output = PlayerDistance();
+            Iterator.graphic.lookAtPos = output.pos;
+            if (output.distance > 500f)
             {
                 owner.noticedPlayer = null;
                 Iterator.graphic.RequestSwitchAnimation(MechIteratorGraphic.AnimationID.Idle);

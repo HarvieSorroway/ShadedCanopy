@@ -9,7 +9,7 @@ using static ShadedCanopy.Iterators.MechIterator.MechIteratorConversation;
 
 namespace ShadedCanopy.Iterators.MechIterator
 {
-    [SCDevToolsInspectType("Root.RainWorld.Game.World.Room", "MechIterator")]
+    
     internal class MechIteratorBehaviour
     {
         public MechIterator owner;
@@ -19,8 +19,9 @@ namespace ShadedCanopy.Iterators.MechIterator
         public Player noticedPlayer;
 
         //状态相关
-        [SCDevToolsInspectValue] internal int timeInAction;
-        [SCDevToolsInspectValue] MechState state = MechState.WaitForPlayer;
+        internal int timeInAction;
+        internal MechState state = MechState.WaitForPlayer;
+        internal MechState nextStateAfterAction;//下一个状态，用于特殊action自动切换状态
         public bool greetedPlayer;
 
         MechBehavAction behavAction;
@@ -77,6 +78,13 @@ namespace ShadedCanopy.Iterators.MechIterator
             state = newState;
 
             timeInAction = 0;
+        }
+
+        public MechState PopNextState()
+        {
+            var temp = nextStateAfterAction;
+            nextStateAfterAction = null;
+            return temp;
         }
 
 

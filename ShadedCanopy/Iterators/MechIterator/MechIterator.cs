@@ -17,7 +17,7 @@ namespace ShadedCanopy.Iterators.MechIterator
         public MechIteratorGraphic graphic;
         public MechIteratorBehaviour behaviour;
 
-        public Vector2 pos = new Vector2(500f, 400f);
+        public Vector2 pos = new Vector2(683f, 365f);
 
         public LightSource lightSource;
 
@@ -34,8 +34,7 @@ namespace ShadedCanopy.Iterators.MechIterator
             lightSource = new LightSource(pos, true, Color.cyan * 0.5f + Color.blue * 0.5f, this);
             room.AddObject(lightSource);
 
-            SCDevNodeTreeManager.Track(this);
-
+       
             //SCTween.TweenVector2((val) => this.pos = val,new Vector2(500f, 400f), new Vector2(800f, 400f), 3f)
             //    .SetEase(SCHelperUtils.EaseInOutCubic)
             //    .RunAsync()
@@ -51,8 +50,11 @@ namespace ShadedCanopy.Iterators.MechIterator
             behaviour.Update();
             if (currentLiveLabel != null && currentLiveLabel.slatedForDeletetion)
                 currentLiveLabel = null;
+            graphic.talkFlicker = (currentLiveLabel != null && currentLiveLabel.revealProgression < currentLiveLabel.MaxRevealProgression) ? 1f : 0f;
+
+
             lightSource.setPos = pos;
-            lightSource.rad = 200f;
+            lightSource.rad = 600f;
             lightSource.alpha = 1f;
         }
 

@@ -8,6 +8,7 @@ using ShadedCanopy.Creatures;
 using ShadedCanopy.Creatures.Scavengers;
 using ShadedCanopy.FlashingEffect;
 using ShadedCanopy.Imgui;
+using ShadedCanopy.Iterators.MechIterator;
 using ShadedCanopy.SaveDatas;
 using System;
 using System.Collections.Generic;
@@ -67,6 +68,8 @@ namespace ShadedCanopy
                 FlashingEffectManager.Init();
                 ScavengerHooks.HooksOn();
                 PlacedObjects.SCPlacedObjects.Init();
+
+                MechIteratorHooks.HooksOn();
 
                 SCUtils.SCUtils.Init(Logger);
                 SCResources.LoadResources(self);

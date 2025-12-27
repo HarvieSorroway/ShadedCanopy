@@ -18,8 +18,17 @@ namespace ShadedCanopy.Iterators.MechIterator
 
         public List<DataPearl.AbstractDataPearl> stashPearls = new();  //暂存的珍珠
 
+        public string playerNamePrefix = "User#1BF52";
+        public bool playerNameChangNeedCheck;
+
         [JsonIgnore]
         public bool meetThisCycle;              //本周期是否见过面
+
+        public void SetPlayerName(string newName)
+        {
+            playerNamePrefix = newName;
+            playerNameChangNeedCheck = true;
+        }
     }
 
 

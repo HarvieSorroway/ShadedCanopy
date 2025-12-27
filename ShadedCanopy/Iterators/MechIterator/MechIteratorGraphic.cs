@@ -5,16 +5,17 @@ using SCUtils.SCDevTools.NodeTreeManager;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 namespace ShadedCanopy.Iterators.MechIterator
 {
+    //[SCDevToolsInspectType("Root.RainWorld.Game.World.Room", "MechIterator")]
     internal class MechIteratorGraphic
     {
         int projPointCount, totSpriteCount;
-
         public MechIterator mechIterator;
 
         Point[] points;
@@ -26,7 +27,8 @@ namespace ShadedCanopy.Iterators.MechIterator
         Dictionary<int, PointCaster> casterPointsFirstIndexMap = new Dictionary<int, PointCaster>();
 
         //动画参数
-        float Expand;
+        float Expand, animatedTalkFlicker;
+        public float talkFlicker;
 
         public Vector2 lookAtPos;
         Vector2 lookDir;//-1 ~ 1;
@@ -40,19 +42,19 @@ namespace ShadedCanopy.Iterators.MechIterator
             this.mechIterator = mechIterator;
             
             pointCasters.Add(sphereCaster = new FibonacciSphereCaster(this, 2f));
-            var ringCaster = new KarmaRingCaster(this, false, 20f, 80f, 120f, 20, 0.8f);
+            var ringCaster = new KarmaRingCaster(this, false, 20f, 80f, 120f, 20, 0.8f, 0.1f);
             pointCasters.Add(ringCaster);
             ringCasters.Add(ringCaster);
 
-            ringCaster = new KarmaRingCaster(this, true, 30f, 80f, 100f, 30, 0.5f);
+            ringCaster = new KarmaRingCaster(this, true, 30f, 80f, 100f, 30, 0.5f, 0.15f);
             pointCasters.Add(ringCaster);
             ringCasters.Add(ringCaster);
 
-            ringCaster = new KarmaRingCaster(this, false, 40f, 80f, 85f,40, 0.4f);
+            ringCaster = new KarmaRingCaster(this, false, 40f, 80f, 85f, 40, 0.4f, 0.25f);
             pointCasters.Add(ringCaster);
             ringCasters.Add(ringCaster);
 
-            ringCaster = new KarmaRingCaster(this, true, 50f, 80f, 80f,60, 0.2f);
+            ringCaster = new KarmaRingCaster(this, true, 50f, 80f, 80f, 60, 0.2f, 0.4f);
             pointCasters.Add(ringCaster);
             ringCasters.Add(ringCaster);
 
@@ -67,6 +69,7 @@ namespace ShadedCanopy.Iterators.MechIterator
 
             int casterIndex = 0;
             int casterStartIndex = 0;
+
             for(int i = 0;i < projPointCount;i++)
             {
                 if (casterPointsFirstIndexMap.TryGetValue(i, out var caster))
@@ -78,17 +81,19 @@ namespace ShadedCanopy.Iterators.MechIterator
             }
 
             ForceSwitchAnimation(AnimationID.Idle);
+
+            SCDevNodeTreeManager.Track(this);
         }
 
 
         public void Update()
         {
-           
             AnimationUpdate();
 
+            animatedTalkFlicker = Mathf.Lerp(animatedTalkFlicker, talkFlicker * Random.value, 0.4f * Random.value);
             foreach (var ring in ringCasters)
             {
-                ring.rotation = Quaternion.Euler(-90f + lookDir.y * 50f * Expand, 90f + lookDir.x * 50f * Expand, 0);
+                ring.rotation = Quaternion.Euler(-90f + lookDir.y * 30f * Expand, 90f + lookDir.x * 30f * Expand, 0);
                 //ring.rotation = Quaternion.Euler(mechIterator.RotX, mechIterator.RotY, mechIterator.RotZ);
             }
 
@@ -121,8 +126,8 @@ namespace ShadedCanopy.Iterators.MechIterator
             }
             for (int i = projPointCount * 2; i < projPointCount * 3; i++)
             {
-                FSprite sprite = new FSprite("pixel", true) { shader = rCam.room.game.rainWorld.Shaders[SCResources.AdditiveDefaultShaderName], scale = 2.1f };
-                sprite.color = Color.cyan;
+                FSprite sprite = new FSprite("pixel", true) { shader = rCam.room.game.rainWorld.Shaders[SCResources.AdditiveDefaultShaderName], scale = 3.1f };
+                sprite.color = Color.white;
                 sLeaser.sprites[i] = sprite;
             }
             AddToContainer(sLeaser, rCam, null);
@@ -150,14 +155,19 @@ namespace ShadedCanopy.Iterators.MechIterator
                 return;
             for (int i = 0; i < projPointCount; i++)
             {
-                sLeaser.sprites[i].SetPosition(points[i].DrawPos(camPos, timeStacker));
-                sLeaser.sprites[i].alpha = points[i].alpha;
+                Vector2 pos = points[i].DrawPos(camPos, timeStacker);
 
-                sLeaser.sprites[i + projPointCount].SetPosition(points[i].DrawPos(camPos, timeStacker));
-                sLeaser.sprites[i + projPointCount].alpha = points[i].alpha;
+                sLeaser.sprites[i].SetPosition(pos);
+                sLeaser.sprites[i].alpha = points[i].alpha * 0.5f;
+                sLeaser.sprites[i].color = points[i].bkgGradCol;
 
-                sLeaser.sprites[i + projPointCount * 2].SetPosition(points[i].DrawPos(camPos, timeStacker));
+                sLeaser.sprites[i + projPointCount].SetPosition(pos);
+                sLeaser.sprites[i + projPointCount].alpha = points[i].alpha * 0.5f;
+                sLeaser.sprites[i + projPointCount].color = points[i].midGradCol;
+
+                sLeaser.sprites[i + projPointCount * 2].SetPosition(pos);
                 sLeaser.sprites[i + projPointCount * 2].alpha = points[i].alpha;
+                sLeaser.sprites[i + projPointCount * 2].color = points[i].highlightCol;
             }
         }
         #endregion
@@ -217,14 +227,15 @@ namespace ShadedCanopy.Iterators.MechIterator
         {
             static float FireUpAnimChance = 0.01f, AnimAlpha = 0.1f;
 
-            public int casterIndex, pointIndex;
+            public int casterIndex, pointIndex, pointID;
             public Vector2 pos, lastPos;
+            public Color highlightCol, midGradCol, bkgGradCol;
             public float alpha;
 
             bool inAnim;
             float switchPosAnim;
             int noAnimCounter;
-            Vector2 animOrigPos, animMidPos;
+            public Vector2 animOrigPos, animMidPos, targetPos;
 
             public bool ReadyForAnim => !inAnim && noAnimCounter == 0;
 
@@ -232,15 +243,19 @@ namespace ShadedCanopy.Iterators.MechIterator
             {
                 this.casterIndex = initCasterIndex;
                 this.pointIndex = initPointIndex;
-                SCUtils.SCUtils.Log($"Point : {initCasterIndex} - {initPointIndex}");
             }
 
             public void Update(MechIteratorGraphic graphic)
             {
+                if (float.IsNaN(pos.x) || float.IsNaN(pos.y) || float.IsNaN(lastPos.x) || float.IsNaN(lastPos.y))
+                    ResetPositions();
+
                 lastPos = pos;
 
                 var caster = graphic.pointCasters[casterIndex];
-                Vector2 targetPos = caster.Cast(pointIndex) + graphic.mechIterator.pos;
+                var colPack = caster.GetColors(pointIndex);
+                Vector2  targetPosB;
+                targetPos = targetPosB = caster.Cast(pointIndex) + graphic.mechIterator.pos;
                 float targetAlpha = caster.GetAlpha(pointIndex);
 
                 if (inAnim)
@@ -248,7 +263,7 @@ namespace ShadedCanopy.Iterators.MechIterator
                     switchPosAnim = Mathf.Clamp01(switchPosAnim + 1 / 40f);
 
                     Vector2 a = Vector2.Lerp(animOrigPos, animMidPos, switchPosAnim);
-                    Vector2 b = Vector2.Lerp(animMidPos, targetPos, switchPosAnim);
+                    Vector2 b = Vector2.Lerp(animMidPos, targetPosB, switchPosAnim);
                     targetPos = Vector2.Lerp(a, b, switchPosAnim);
                     targetAlpha = AnimAlpha;
 
@@ -258,12 +273,19 @@ namespace ShadedCanopy.Iterators.MechIterator
                         noAnimCounter = 40;
                     }
                 }
-                
-                if(noAnimCounter > 0)
+
+                pos = Vector2.Lerp(pos, targetPos, 0.15f);
+                alpha = Mathf.Clamp(Mathf.Lerp(alpha, targetAlpha, 0.1f), 0.1f, 1f);
+
+                highlightCol = Color.Lerp(highlightCol, colPack.highlight, 0.5f);
+                midGradCol = Color.Lerp(midGradCol, colPack.mid, 0.5f);
+                bkgGradCol = Color.Lerp(bkgGradCol, colPack.bkg, 0.5f);
+
+                if (noAnimCounter > 0)
                 {
                     noAnimCounter--;
                 }
-                else
+                else if(ReadyForAnim)
                 {
                     if (Random.value < FireUpAnimChance * graphic.Expand)
                     {
@@ -274,9 +296,13 @@ namespace ShadedCanopy.Iterators.MechIterator
                         }
                     }
                 }
+            }
 
-                pos = Vector2.Lerp(pos, targetPos, 0.15f);
-                alpha = Mathf.Lerp(alpha, targetAlpha, 0.1f);
+            void ResetPositions()
+            {
+                inAnim = false;
+                noAnimCounter = 40;
+                pos = lastPos = targetPos;
             }
 
             public Vector2 DrawPos(Vector2 camPos, float timeStacker)
@@ -303,7 +329,7 @@ namespace ShadedCanopy.Iterators.MechIterator
             {
                 switchPosAnim = 0f;
                 animOrigPos = pos;
-                animMidPos = (pos - lastPos) * 40f + pos;
+                animMidPos =  Vector2.ClampMagnitude((pos - lastPos) * 40f, 200f) + pos;
                 inAnim = true;
             }
         }
@@ -330,6 +356,11 @@ namespace ShadedCanopy.Iterators.MechIterator
             public virtual float GetAlpha(int i)
             {
                 return 1f;
+            }
+
+            public virtual (Color highlight, Color mid, Color bkg) GetColors(int i)
+            {
+                return (Color.white, Color.cyan, Color.blue);
             }
         }
 
@@ -397,7 +428,7 @@ namespace ShadedCanopy.Iterators.MechIterator
                 if (i < cachedPoints.Count && i >= 0)
                     return cachedPoints[i];
                 else
-                    return cachedPoints.Last();
+                    throw new ArgumentOutOfRangeException(nameof(i), $"索引超出范围: given {i}, nax {cachedPoints.Count - 1}");
             }
 
             public override float GetAlpha(int i)
@@ -405,7 +436,12 @@ namespace ShadedCanopy.Iterators.MechIterator
                 if (i < alphas.Count && i >= 0)
                     return alphas[i];
                 else
-                    return alphas.Last();
+                    throw new ArgumentOutOfRangeException(nameof(i), $"索引超出范围: given {i}, nax {alphas.Count - 1}");
+            }
+
+            public override (Color highlight, Color mid, Color bkg) GetColors(int i)
+            {
+                return new(Color.white, Color.cyan, Color.blue);
             }
 
             void CaculateCastPoints()
@@ -430,7 +466,7 @@ namespace ShadedCanopy.Iterators.MechIterator
                     for (int i = 0; i < PointsCount; i++)
                     {
                         // 1. 计算Y轴坐标（单位球面：从+1到-1线性分布）
-                        float y = 1 - (i / (float)(PointsCount - 1)) * 2;
+                        float y = 1 - ((i+1) / (float)(PointsCount - 1)) * 2;
 
                         // 2. 计算垂直于Y轴的圆半径（保证点在单位球面上）
                         float r = Mathf.Sqrt(1 - y * y);
@@ -446,16 +482,30 @@ namespace ShadedCanopy.Iterators.MechIterator
                         points.Add(rotation * new Vector3(x * Rad, y * Rad, z * Rad));
                     }
                 }
-               
 
-
-                foreach(var point in points)
+                try
                 {
-                    Vector2 pos = new Vector2(point.x, point.z);
-                    Vector2 posOnRing = pos.normalized * Rad;
-                    float pushFactor = Mathf.Pow((Rad - pos.magnitude) * pos.magnitude / (Rad * Rad), 1f/extraPush);
-                    cachedPoints.Add(Vector2.Lerp(pos ,posOnRing, pushFactor));
-                    alphas.Add(Mathf.Lerp(0.05f, 0.4f + 0.4f * graphic.Expand, Mathf.InverseLerp(-Rad * 0.1f, Rad * 0.1f, point.y)) *(pos.magnitude / Rad));
+                    foreach (var point in points)
+                    {
+                        int i = points.IndexOf(point);
+                        Vector2 pos = new Vector2(point.x, point.z);
+                        Vector2 norm = pos.normalized;
+
+                        float magnitude = pos.magnitude;
+
+                        Vector2 posOnRing = Mathf.Approximately(0f, magnitude) ? Custom.RNV() * Rad : norm * Rad;
+                        float pushFactor = Mathf.Pow((Rad - magnitude) * magnitude / (Rad * Rad), 1f / extraPush);
+                        cachedPoints.Add(Vector2.Lerp(pos, posOnRing, pushFactor));
+                        //alphas.Add(point.y > -0.1 * Rad ? 1f : 0f);
+
+                        //graphic.test[i].SetPosition(cachedPoints[i] + graphic.mechIterator.pos - graphic.mechIterator.room.game.cameras[0].pos);
+                        //graphic.test[i].alpha = alphas[i] + 0.5f;
+                        alphas.Add(Mathf.Lerp(0.05f, 0.4f + 0.4f * graphic.Expand, Mathf.InverseLerp(-Rad * 0.1f, Rad * 0.1f, point.y)) * (pos.magnitude / Rad));
+                    }
+                }
+                catch(Exception e)
+                {
+                    Debug.LogException(e);
                 }
             }
         }
@@ -464,6 +514,7 @@ namespace ShadedCanopy.Iterators.MechIterator
         {
             List<Vector2> cachedPoints = new List<Vector2>() { Vector2.zero };
             List<float> alphas = new List<float>() { 1f };
+            bool[] flickers;
 
             //public float zRot;
             public Quaternion rotation;
@@ -487,18 +538,24 @@ namespace ShadedCanopy.Iterators.MechIterator
                 }
             }
 
-            float dist, sphereRad, alpha;
+            float dist, sphereRad, alpha, maxFlickerExpand;
             bool _reverse;
 
 
-            public KarmaRingCaster(MechIteratorGraphic graphic, bool reverse, float Rad, float sphereRad, float dist, int totPoints, float alpha) : base(graphic)
+            public KarmaRingCaster(MechIteratorGraphic graphic, bool reverse, float Rad, float sphereRad, float dist, int totPoints, float alpha, float maxFlickerExpand) : base(graphic)
             {
                 this.Rad = Rad;
                 this.dist = dist;
                 this.sphereRad = sphereRad;
                 this._totPoints = totPoints;
                 this.alpha = alpha;
+                this.maxFlickerExpand = maxFlickerExpand;
                 _reverse = reverse;
+                flickers = new bool[PointsCount];
+                for(int i = 0;i < flickers.Length;i++)
+                {
+                    flickers[i] = false;
+                }
             }
 
             void CaculateCastPoints()
@@ -521,7 +578,7 @@ namespace ShadedCanopy.Iterators.MechIterator
                 }
                 else
                 {
-                    float rad = Mathf.Lerp(sphereRad, Rad, graphic.Expand);
+                    float rad = Mathf.Lerp(sphereRad, Rad, graphic.Expand * (1f - graphic.animatedTalkFlicker * maxFlickerExpand));
                     for (int i = 0;i < PointsCount; i++)
                     {
                         Vector3 pos = new Vector3(Mathf.Cos(Mathf.PI * i * 2 / (float)PointsCount) * rad, dist, Mathf.Sin(Mathf.PI * i * 2 / (float)PointsCount) * rad);
@@ -548,13 +605,46 @@ namespace ShadedCanopy.Iterators.MechIterator
                     CaculateCastPoints();
                     _needRecalc = false;
                 }
+
+                if(graphic.Expand < 0.8f)
+                {
+                    for (int i = 0; i < flickers.Length; i++)
+                    {
+                        flickers[i] = false;
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < flickers.Length; i++)
+                    {
+                        if(flickers[i] && Random.value < 0.5f)
+                        {
+                            flickers[i] = false;
+                        }
+                        else if(!flickers[i] && Random.value < 0.05f * graphic.animatedTalkFlicker)
+                        {
+                            flickers[i] = true;
+                        }
+                    }
+                }
             }
+
+            public override (Color highlight, Color mid, Color bkg) GetColors(int i)
+            {
+                if (flickers[i])
+                {
+                    return new(Color.red, Color.red, Color.red);
+                }
+                else
+                    return new(Color.white, Color.cyan, Color.blue);
+            }
+
             public override Vector2 Cast(int i)
             {
                 if (i < cachedPoints.Count && i >= 0)
                     return cachedPoints[i];
                 else
-                    return cachedPoints.Last();
+                    throw new ArgumentOutOfRangeException(nameof(i), $"索引超出范围: given {i}, nax {cachedPoints.Count - 1}");
             }
 
             public override float GetAlpha(int i)

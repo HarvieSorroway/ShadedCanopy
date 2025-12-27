@@ -10,7 +10,17 @@ namespace ShadedCanopy.Iterators.MechIterator
     {
         public static void HooksOn()
         {
+            On.Room.ReadyForAI += Room_ReadyForAI;
+        }
 
+        private static void Room_ReadyForAI(On.Room.orig_ReadyForAI orig, Room self)
+        {
+            orig.Invoke(self);
+            if(self.game != null && self.game.IsStorySession && self.abstractRoom.name == "MU_LAB_S")
+            {
+                MechIterator iterator = new MechIterator(self);
+                self.AddObject(iterator);
+            }
         }
     }
 }

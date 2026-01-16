@@ -29,6 +29,9 @@ namespace ShadedCanopy
 
             Blur40Atlas = Futile.atlasManager.LoadImage("atlases/blur40").name;
             Blur80Atlas = Futile.atlasManager.LoadImage("atlases/blur80").name;
+
+            Futile.atlasManager.LoadImage("atlases/PlatePetal");
+            Futile.atlasManager.LoadImage("atlases/NectarCrystal");
         }   
     }
 }

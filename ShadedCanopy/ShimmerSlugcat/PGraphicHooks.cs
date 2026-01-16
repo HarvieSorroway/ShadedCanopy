@@ -127,7 +127,7 @@ namespace ShadedCanopy.ShimmerSlugcat
                         sLeaser.sprites[i] = triangleMesh;
                     }
 
-                    if (i >= 0 && i <= 8)
+                    if (i >= 0 && i <= 9)
                     {
                         sLeaser.sprites[i].shader = Custom.rainWorld.Shaders["ShimmerSkin"];
                     }

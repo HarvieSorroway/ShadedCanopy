@@ -63,63 +63,23 @@ namespace ShadedCanopy
             {
                 inited = true;
 
-                ShimmerSlugcat.PlayerHooks.Hooks();
-                ShimmerSlugcat.PGraphicHooks.Hooks();
-                FlashingEffectManager.Init();
-                ScavengerHooks.HooksOn();
-                PlacedObjects.SCPlacedObjects.Init();
-
-                MechIteratorHooks.HooksOn();
-
-                SCUtils.SCUtils.Init(Logger);
-                SCResources.LoadResources(self);
+            ShimmerSlugcat.PlayerHooks.Hooks();
+            ShimmerSlugcat.PGraphicHooks.Hooks();
+            FlashingEffectManager.Init();
+            ScavengerHooks.HooksOn();
+            PlacedObjects.SCPlacedObjects.Init();
+            
+            SCUtils.SCUtils.Init(Logger);
+            SCResources.LoadResources(self);
 
                 //ImguiRegister.TryInit();
                 Objects.SCMorningGlory.SCMorningGloryHooks.Hook();
                 Objects.SCMorningGlory.SCMorningGloryTest.HookTest();
 
-                SCUtils.SCHelperUtils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");
+            Objects.SCNectarPlate.SCNectarPlate.TestHooks();
 
-                //On.RainWorldGame.RawUpdate += RainWorldGame_RawUpdate;
-            }
-            catch (Exception e)
-            {
-                Logger.LogFatal($"Exception during {ModName} RainWorld_OnModsInit: {e}");
-            }
-        }
-
-        /*
-        private void RainWorldGame_RawUpdate(On.RainWorldGame.orig_RawUpdate orig, RainWorldGame self, float dt)
-        {
-            orig(self, dt);
-            if (Input.GetKeyDown(KeyCode.E))
-            {
-                SCHelperUtils.Log(SCDeathPersistentManager.Data);
-            }
-            else if (Input.GetKeyDown(KeyCode.F)) 
-            {
-                SCDeathPersistentManager.Data.foodPrintUnlocked = true;
-            }
-            else if (Input.GetKeyDown(KeyCode.F))
-            {
-                SCDeathPersistentManager.Data.foodPrintUnlocked = true;
-            }
-            else if (Input.GetKeyDown(KeyCode.W))
-            {
-                SCDeathPersistentManager.Data.stashPearls.Add(new DataPearl.AbstractDataPearl(self.world, AbstractPhysicalObject.AbstractObjectType.DataPearl,
-                    null, self.Players[0].pos, self.GetNewID(), -1, -1, null, DataPearl.AbstractDataPearl.DataPearlType.GW));
-            }
-            else if (Input.GetKeyDown(KeyCode.I))
-            {
-                foreach(var data in SCDeathPersistentManager.Data.stashPearls)
-                {
-                    SCHelperUtils.Log(JsonConvert.SerializeObject(data));
-                }
-            }
-            else if (Input.GetKeyDown(KeyCode.G))
-            {
-                SCDeathPersistentManager.Data.meetThisCycle = true;
-            }
+            SCUtils.SCHelperUtils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");
+            inited = true;
         }
         */
     }

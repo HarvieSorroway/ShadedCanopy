@@ -63,24 +63,30 @@ namespace ShadedCanopy
             {
                 inited = true;
 
-            ShimmerSlugcat.PlayerHooks.Hooks();
-            ShimmerSlugcat.PGraphicHooks.Hooks();
-            FlashingEffectManager.Init();
-            ScavengerHooks.HooksOn();
-            PlacedObjects.SCPlacedObjects.Init();
-            
-            SCUtils.SCUtils.Init(Logger);
-            SCResources.LoadResources(self);
+                ShimmerSlugcat.PlayerHooks.Hooks();
+                ShimmerSlugcat.PGraphicHooks.Hooks();
+                FlashingEffectManager.Init();
+                ScavengerHooks.HooksOn();
+                PlacedObjects.SCPlacedObjects.Init();
+
+                SCUtils.SCUtils.Init(Logger);
+                SCResources.LoadResources(self);
 
                 //ImguiRegister.TryInit();
                 Objects.SCMorningGlory.SCMorningGloryHooks.Hook();
                 Objects.SCMorningGlory.SCMorningGloryTest.HookTest();
 
-            Objects.SCNectarPlate.SCNectarPlate.TestHooks();
+                Objects.SCNectarPlate.SCNectarPlate.TestHooks();
+                Objects.SCNectarPlate.SCNectarPlateHooks.Hooks();
 
-            SCUtils.SCHelperUtils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");
-            inited = true;
+                SCUtils.SCHelperUtils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");
+                inited = true;
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.LogException(ex);
+            }
         }
-        */
+        
     }
 }

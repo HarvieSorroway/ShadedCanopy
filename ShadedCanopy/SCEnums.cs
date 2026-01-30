@@ -12,6 +12,7 @@ namespace ShadedCanopy
         {
             public readonly static PlacedObject.Type DeadlyLight = new PlacedObject.Type("DeadlyLight", true);
             public readonly static PlacedObject.Type MorngingGlory = new PlacedObject.Type("MorngingGlory", true);
+            public readonly static PlacedObject.Type NectarPlate = new PlacedObject.Type("NectarPlate", true);
         }
 
         internal static class SlugStateName
@@ -28,7 +29,7 @@ namespace ShadedCanopy
         {
             public readonly static AbstractPhysicalObject.AbstractObjectType SCMorningGlory = new AbstractPhysicalObject.AbstractObjectType("SCMorningGlory", true);
             public readonly static AbstractPhysicalObject.AbstractObjectType SCMorningGloryFruit = new AbstractPhysicalObject.AbstractObjectType("SCMorningGloryFruit", true);
-
+            public static readonly AbstractPhysicalObject.AbstractObjectType NectarPlate = new AbstractPhysicalObject.AbstractObjectType("NectarPlate", true);
         }
     }
 }

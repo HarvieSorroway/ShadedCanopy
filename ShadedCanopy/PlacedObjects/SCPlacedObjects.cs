@@ -14,6 +14,7 @@ namespace ShadedCanopy.PlacedObjects
         {
             PlacedObjectExt.Register(new DeadlyLightExt());
             PlacedObjectExt.Register(new Objects.SCMorningGlory.SCMorningGloryPlacedObject());
+            PlacedObjectExt.Register(new Objects.SCNectarPlate.SCNectarPlatePlacedObject());
         }
     }
 }

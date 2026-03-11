@@ -74,10 +74,12 @@ namespace ShadedCanopy
 
                 //ImguiRegister.TryInit();
                 Objects.SCMorningGlory.SCMorningGloryHooks.Hook();
-                Objects.SCMorningGlory.SCMorningGloryTest.HookTest();
+                Objects.SCMorningGlory.SCMorningGloryTest.HookTest(); 
 
                 Objects.SCNectarPlate.SCNectarPlate.TestHooks();
                 Objects.SCNectarPlate.SCNectarPlateHooks.Hooks();
+
+                Objects.SCBlinkingLawn.SCBlinkingLawnTest.HookTest();
 
                 SCUtils.SCHelperUtils.Log($"{ModName} - {ModVersion} - {DateTime.Now}");
                 inited = true;

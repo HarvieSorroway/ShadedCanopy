@@ -13,6 +13,7 @@ namespace ShadedCanopy
             public readonly static PlacedObject.Type DeadlyLight = new PlacedObject.Type("DeadlyLight", true);
             public readonly static PlacedObject.Type MorngingGlory = new PlacedObject.Type("MorngingGlory", true);
             public readonly static PlacedObject.Type NectarPlate = new PlacedObject.Type("NectarPlate", true);
+            public readonly static PlacedObject.Type BlinkingLawnRect = new PlacedObject.Type("BlinkingLawnRect", true);
         }
 
         internal static class SlugStateName

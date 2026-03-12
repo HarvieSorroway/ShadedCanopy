@@ -184,9 +184,12 @@ namespace ShadedCanopy.Objects.SCMorningGlory
             [SCDevToolsInspectValue]
             public float stalkGradientDarknessMax = 0.1f;
 
+
+            [SCDevToolsInspectValue]
+            public float fogDepth = 0.45f;
             // 颜色战地过大 最好放最后
-            public Color stalkColorRangeLeft = RWCustom.Custom.hexToColor("018C52");
-            public Color stalkColorRangeRight = RWCustom.Custom.hexToColor("013E32");
+            public Color stalkColorA = RWCustom.Custom.hexToColor("018C52");
+            public Color stalkColorB = RWCustom.Custom.hexToColor("013E32");
             [SCDevToolsInspectValue]
             public Color stalkNoFruitColor = RWCustom.Custom.hexToColor("58561E");
 

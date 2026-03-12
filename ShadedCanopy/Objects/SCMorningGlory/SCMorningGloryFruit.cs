@@ -242,7 +242,7 @@ namespace ShadedCanopy.Objects.SCMorningGlory
         public void ApplyPalette(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, RoomPalette palette)
         {
             sLeaser.sprites[1].color = palette.blackColor.CloneWithNewAlpha(0.8f);
-            this.color = SCMorningGloryProperty.fruitBaseColor;
+            this.color = Color.Lerp(SCMorningGloryProperty.fruitBaseColor, palette.fogColor, ModifiableSCMorningGloryProperty.scMorningGlory.fogDepth);
             sLeaser.sprites[0].color = this.color;
         }
 

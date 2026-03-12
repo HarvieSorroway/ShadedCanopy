@@ -29,6 +29,7 @@ namespace ShadedCanopy.Objects.SCMorningGlory
         SelfRestoringParameter spinAngle, flipAngle;
         public float spinOffset;
         int startIdx;
+        Color color;
         public int spriteCount
         {
             get => (this.edgeCount + 1) / 2 * 2;
@@ -168,6 +169,7 @@ namespace ShadedCanopy.Objects.SCMorningGlory
             {
                 sLeaser.sprites[i + this.startIdx].color = RWCustom.Custom.HSL2RGB(i * 1.0f / this.spriteCount, 1f, 0.5f);
             }
+            this.color = Color.Lerp(this.owner.personalization.color, palette.fogColor, ModifiableSCMorningGloryProperty.scMorningGlory.fogDepth);
         }
         public void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
         {
@@ -226,7 +228,7 @@ namespace ShadedCanopy.Objects.SCMorningGlory
                     mesh.UVvertices[j] = new Vector2(0, Mathf.InverseLerp(this.vertices[0][0].y, this.vertices[0][this.nodeCount - 1].y, this.vertices[0][j].y));
                     mesh.UVvertices[j + this.nodeCount] = new Vector2(1, Mathf.InverseLerp(this.vertices[0][0].y, this.vertices[0][this.nodeCount - 1].y, this.vertices[0][j].y));
                 }
-                Color color = Color.Lerp(this.owner.personalization.color, (i % 2 == 0 ? Color.white : Color.black), 0.1f);
+                Color color = Color.Lerp(this.color, (i % 2 == 0 ? Color.white : Color.black), 0.1f);
                 if (!inFront)
                 {
                     color = Color.Lerp(color, Color.white, 0.2f);

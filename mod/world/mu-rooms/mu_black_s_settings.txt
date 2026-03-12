@@ -1,0 +1,11 @@
+Template: NONE
+DangerType: Flood
+Grime: 0
+RandomItemDensity: 0.1086956
+WaterReflectionAlpha: 1
+Palette: 10
+EffectColorA: 0
+EffectColorB: 0
+PlacedObjects: BlinkingLawnRect><187.0717><146.0907><0~18~509~22~510~4~4942~6.304348, LightSource><970.641><85.10812><1~Environment~-337~216~-383~-89.39746~0~0~None~0.2065217~0, MorngingGlory><854.0919><254.1776><0~0~2~3, MorngingGlory><1003.628><171.0918><0~0~2~3, MorngingGlory><1008.346><559.8779><0~0~2~3, MorngingGlory><1167.17><489.6835><0~0~2~3, 
+FadePalette: 83, 0.3369565
+WetTerrain: OFF

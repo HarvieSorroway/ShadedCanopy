@@ -223,7 +223,7 @@ namespace SCUtils.SCDevTools
                     foreach (var obj in treeNode.virtualObjs)
                     {
                         ImGui.PushID(id);
-                        string nodeLabel = $"{treeNode.name}";
+                        string nodeLabel = $"{obj.name}";
                         ImGui.TreeNodeEx(nodeLabel, ImGuiTreeNodeFlags.Bullet | ImGuiTreeNodeFlags.NoTreePushOnOpen);
                         if (ImGui.IsItemClicked())
                         {

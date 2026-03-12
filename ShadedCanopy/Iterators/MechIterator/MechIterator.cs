@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using ShadedCanopy.Iterators.MechIterator.Component;
 
 namespace ShadedCanopy.Iterators.MechIterator
 {
@@ -21,7 +22,7 @@ namespace ShadedCanopy.Iterators.MechIterator
 
         public LightSource lightSource;
 
-        public MechIteratorGraphic.ProjTextLabel currentLiveLabel;
+        public ProjTextLabel currentLiveLabel;
 
 
         public MechIterator(Room room)
@@ -89,7 +90,7 @@ namespace ShadedCanopy.Iterators.MechIterator
             }
             else
             {
-                currentLiveLabel = new MechIteratorGraphic.ProjTextLabel(room, convText, pos + new Vector2(140f, 0f));
+                currentLiveLabel = new ProjTextLabel(room, convText, pos + new Vector2(140f, 0f));
                 room.AddObject(currentLiveLabel);
                 return true;
             }

@@ -234,7 +234,6 @@ namespace ShadedCanopy.Objects.SCMorningGlory
             this.hangingFruit = null;
             Array.Resize(ref this.bodyChunkConnections, this.nodeCount - 1);
         }
-
         public void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam)
         {
             int leafSpriteCount = 0;
@@ -341,13 +340,34 @@ namespace ShadedCanopy.Objects.SCMorningGlory
             this.cover.SpinDisturb(weapon.firstChunk.vel.magnitude * weapon.firstChunk.mass * 2f);
             this.cover.FlipDisturb(weapon.firstChunk.vel.magnitude * weapon.firstChunk.mass * 2f);
         }
+        public static float StalkDarknessAt(float stalkPos)
+        {
+            if (stalkPos > 0.2)
+                return 0;
+            return Mathf.InverseLerp(0.2f, 0, stalkPos);
+        }
         public void ApplyPalette(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, RoomPalette palette)
         {
-            sLeaser.sprites[0].color = this.personalization.color;
+            Color baseColor = Color.Lerp(this.personalization.color, palette.fogColor, ModifiableSCMorningGloryProperty.scMorningGlory.fogDepth);
+            TriangleMesh tri = sLeaser.sprites[0] as TriangleMesh;
+            for (int i = 1; i < this.nodeCount; ++i)
+            {
+                float prevPos = (i - 1) / (this.nodeCount - 1f);
+                float nextPos = i / (this.nodeCount - 1f);
+                int vertOffset = (i - 1) * 4;
+                float prevDarkness = StalkDarknessAt(prevPos);
+                float nextDarkness = StalkDarknessAt(nextPos);
+                tri.verticeColors[vertOffset] = Color.Lerp(baseColor, Color.black, prevDarkness);
+                tri.verticeColors[vertOffset + 1] = Color.Lerp(baseColor, Color.black, prevDarkness);
+                tri.verticeColors[vertOffset + 2] = Color.Lerp(baseColor, Color.black, nextDarkness);
+                tri.verticeColors[vertOffset + 3] = Color.Lerp(baseColor, Color.black, nextDarkness);
+            }
             sLeaser.sprites[1].color = palette.blackColor;
             this.cover.ApplyPalette(sLeaser, rCam, palette);
             foreach (SCMorningGloryLeaf leaf in this.leaves)
                 leaf.ApplyPalette(sLeaser, rCam, palette);
+            SCPlugin.Logger.LogInfo($"Palette: " +
+                $"fog: {palette.fogColor}, sky: {palette.skyColor}");
         }
 
         public void AddToContainer(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, FContainer newContatiner=null)
@@ -384,10 +404,10 @@ namespace ShadedCanopy.Objects.SCMorningGlory
             {
                 UnityEngine.Random.State state = UnityEngine.Random.state;
                 UnityEngine.Random.InitState(randomSeed);
-                this.color = Color.Lerp(
-                    ModifiableSCMorningGloryProperty.scMorningGlory.stalkColorRangeLeft,
-                    ModifiableSCMorningGloryProperty.scMorningGlory.stalkColorRangeRight,
-                    UnityEngine.Random.Range(0f, 1f));
+                
+                this.color = SCUtils.UtilTools.ColorRandomLerp(
+                    ModifiableSCMorningGloryProperty.scMorningGlory.stalkColorA,
+                    ModifiableSCMorningGloryProperty.scMorningGlory.stalkColorB);
                 //this.coverAngle = UnityEngine.Random.Range(SCMorningGloryProperty.coverAngleMin, SCMorningGloryProperty.coverAngleMax);
                 stalkWidthOffset = new float2[stalkNodeCount];
                 this.coverSpinOffset = UnityEngine.Random.Range(0f, 360f);
@@ -396,10 +416,20 @@ namespace ShadedCanopy.Objects.SCMorningGlory
                     ModifiableSCMorningGloryProperty.scMorningGlory.coverPetalsMax + 1);
                 for (int i = 0; i < stalkNodeCount; i++)
                 {
-                    stalkWidthOffset[i] = new float2(
-                        UnityEngine.Random.Range(ModifiableSCMorningGloryProperty.scMorningGlory.stalkWidthOffsetMin, ModifiableSCMorningGloryProperty.scMorningGlory.stalkWidthOffsetMax),
-                        UnityEngine.Random.Range(ModifiableSCMorningGloryProperty.scMorningGlory.stalkWidthOffsetMin, ModifiableSCMorningGloryProperty.scMorningGlory.stalkWidthOffsetMax)
-                    );
+                    if (i == 0 || i == stalkNodeCount - 1)
+                    {
+                        stalkWidthOffset[i] = new float2(
+                            UnityEngine.Random.Range(0, ModifiableSCMorningGloryProperty.scMorningGlory.stalkWidthOffsetMax),
+                            UnityEngine.Random.Range(0, ModifiableSCMorningGloryProperty.scMorningGlory.stalkWidthOffsetMax)
+                        );
+                    }
+                    else
+                    {
+                        stalkWidthOffset[i] = new float2(
+                            UnityEngine.Random.Range(ModifiableSCMorningGloryProperty.scMorningGlory.stalkWidthOffsetMin, ModifiableSCMorningGloryProperty.scMorningGlory.stalkWidthOffsetMax),
+                            UnityEngine.Random.Range(ModifiableSCMorningGloryProperty.scMorningGlory.stalkWidthOffsetMin, ModifiableSCMorningGloryProperty.scMorningGlory.stalkWidthOffsetMax)
+                        );
+                    }
                 }
                 int leafAvailPos = (stalkNodeCount - 2) * 2;
                 List<int> leafPos = new List<int>();

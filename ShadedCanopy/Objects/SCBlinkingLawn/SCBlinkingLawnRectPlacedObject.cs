@@ -92,6 +92,7 @@ namespace ShadedCanopy.Objects.SCBlinkingLawn
         {
             IEnumerable<SCBlinkingLawnRect> objInRoom = from UpdatableAndDeletable uad in owner.room.updateList
                                                         where uad is SCBlinkingLawnRect
+                                                        where (uad as SCBlinkingLawnRect).pObj == pObj
                                                         select uad as SCBlinkingLawnRect;
             if (objInRoom.Any())
             {

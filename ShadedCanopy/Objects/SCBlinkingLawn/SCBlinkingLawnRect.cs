@@ -13,7 +13,11 @@ namespace ShadedCanopy.Objects.SCBlinkingLawn
 
     internal class SCBlinkingLawnRect: UpdatableAndDeletable
     {
-        PlacedObject pObj;
+        public PlacedObject pObj
+        {
+            get;
+            private set;
+        }
         SCBlinkingLawnRectData data
         {
             get { return pObj.data as SCBlinkingLawnRectData; }
@@ -65,7 +69,7 @@ namespace ShadedCanopy.Objects.SCBlinkingLawn
             Color[] colors = new Color[plantCount];
             float[] depths = new float[plantCount];
             int[] styles = new int[plantCount];
-            int[] primeNumbers = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
+            int[] primeNumbers = { 2, 3, 5, 7, 11, 13 };
             int pIdx1 = UnityEngine.Random.Range(0, primeNumbers.Length);
             int pIdx2, pIdx3;
             do
@@ -88,7 +92,7 @@ namespace ShadedCanopy.Objects.SCBlinkingLawn
                     x = 1 - x;
                     y = 1 - y;
                 }
-                if (t > triangleSize1 / rectSize)
+                if (t < triangleSize1 / rectSize)
                 {
                     poses[i] = rect[0] + (rect[1] - rect[0]) * x + (rect[2] - rect[0]) * y;
                 }
@@ -97,8 +101,21 @@ namespace ShadedCanopy.Objects.SCBlinkingLawn
                     poses[i] = rect[0] + (rect[2] - rect[0]) * x + (rect[3] - rect[0]) * y;
                 }
                 Color ca = SCBlinkingPlantProperty.Value.plantColorA, cb = SCBlinkingPlantProperty.Value.plantColorB;
-                colors[i] = new Color(UnityEngine.Random.Range(ca.r, cb.r), UnityEngine.Random.Range(ca.g, cb.g), UnityEngine.Random.Range(ca.b, cb.b));
-                styles[i] = UnityEngine.Random.Range(0, PlantInfo.presetInfos.Length - 1);
+                colors[i] = SCUtils.UtilTools.ColorRandomLerp(ca, cb);
+                float stylef = UnityEngine.Random.Range(0f, 1f);
+                if (stylef <= SCBlinkingLawnProperty.Value.pTypeA)
+                {
+                    styles[i] = 0;
+                } else if (stylef <= SCBlinkingLawnProperty.Value.pTypeA + SCBlinkingLawnProperty.Value.pTypeB)
+                {
+                    styles[i] = 1;
+                } else if (stylef <= SCBlinkingLawnProperty.Value.pTypeA + SCBlinkingLawnProperty.Value.pTypeB + SCBlinkingLawnProperty.Value.pTypeC)
+                {
+                    styles[i] = 2;
+                } else
+                {
+                    styles[i] = 3;
+                }
                 depths[i] = UnityEngine.Random.Range(0f, SCBlinkingLawnProperty.Value.maxDepth);
             }
             plants = new SCBlinkingPlant[plantCount];

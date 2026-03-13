@@ -40,7 +40,7 @@ namespace ShadedCanopy.Objects.SCBlinkingLawn
                 styles[i] = UnityEngine.Random.Range(0, PlantInfo.presetInfos.Length - 1);
                 depths[i] = UnityEngine.Random.Range(0f, SCBlinkingLawnProperty.Value.maxDepth);
                 Color ca = SCBlinkingPlantProperty.Value.plantColorA, cb = SCBlinkingPlantProperty.Value.plantColorB;
-                colors[i] = new Color(UnityEngine.Random.Range(ca.r, cb.r), UnityEngine.Random.Range(ca.g, cb.g), UnityEngine.Random.Range(ca.b, cb.b));
+                colors[i] = SCUtils.UtilTools.ColorRandomLerp(ca, cb);
                 float t1 = UnityEngine.Random.Range(0f, 1f);
                 float t2 = UnityEngine.Random.Range(-1f, 1f);
                 float topBottomAdd = SCBlinkingLawnProperty.Value.segmentTopLength + SCBlinkingLawnProperty.Value.segmentBottomLength;

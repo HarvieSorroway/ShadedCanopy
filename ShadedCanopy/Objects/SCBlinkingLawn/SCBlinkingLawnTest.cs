@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ShadedCanopy.Objects.SCWindFIeld;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -39,7 +40,7 @@ namespace ShadedCanopy.Objects.SCBlinkingLawn
         private static void Room_Loaded(On.Room.orig_Loaded orig, Room self)
         {
             orig.Invoke(self);
-            self.AddObject(new SCWindField(self, 1));
+            self.AddObject(new SCWindFieldTest(self, 1));
         }
     }
 }

@@ -1,26 +1,22 @@
-﻿using BepInEx;
-using IL.RWCustom;
-using SCUtils.SCDevTools.NodeTreeManager;
+﻿using ShadedCanopy.Objects.SCBlinkingLawn;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Assertions;
-using UnityEngine.Rendering;
 
-namespace ShadedCanopy.Objects.SCBlinkingLawn
+namespace ShadedCanopy.Objects.SCWindFIeld
 {
-    internal class SCWindField: UpdatableAndDeletable
+    internal class SCWindFiledBasic : SCWindField
     {
         public static readonly int HistoryLength = 40;
-        
+
         public Vector2[,,] wind;
         int collisionLayer;
-        bool showVis;
+        bool showVis = true;
         DebugSprite[,] debugVisSprite;
-        public SCWindField(Room room, int collisionLayer) : base()
+        public SCWindFiledBasic(Room room, int collisionLayer) : base(room, collisionLayer)
         {
             this.room = room;
             wind = new Vector2[room.TileWidth, room.TileHeight, HistoryLength];
@@ -78,6 +74,7 @@ namespace ShadedCanopy.Objects.SCBlinkingLawn
             }
             return result;
         }
+
         public override void Update(bool eu)
         {
             base.Update(eu);
@@ -138,7 +135,7 @@ namespace ShadedCanopy.Objects.SCBlinkingLawn
             }
         }
 
-        public Vector2 GetWind(Vector2 pos, int latency)
+        public override Vector2 GetWind(Vector2 pos, int latency)
         {
             if (latency >= HistoryLength)
             {
@@ -155,5 +152,4 @@ namespace ShadedCanopy.Objects.SCBlinkingLawn
             }
         }
     }
-
 }

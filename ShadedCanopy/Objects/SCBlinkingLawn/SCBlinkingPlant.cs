@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ShadedCanopy.Objects.SCWindFIeld;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -100,7 +101,7 @@ namespace ShadedCanopy.Objects.SCBlinkingLawn
                     windField = windFields.First();
                 } else
                 {
-                    windField = new SCWindField(room, 1);
+                    windField = new SCWindFieldTest(room, 1);
                     room.AddObject(windField);
                 }
             }

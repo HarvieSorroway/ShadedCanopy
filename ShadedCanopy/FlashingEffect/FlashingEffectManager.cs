@@ -53,7 +53,7 @@ namespace ShadedCanopy.FlashingEffect
 
         public static void HooksOn()
         {
-            On.Player.Jump += Player_Jump;
+            //On.Player.Jump += Player_Jump;
             On.Room.NowViewed += Room_NowViewed;
         }
 

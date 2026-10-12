@@ -64,6 +64,10 @@ namespace SCUtils.SCDevTools.NodeTreeManager
                     {
                         drawers.Add(new Vector2FieldDrawer(field));
                     }
+                    else if (field.FieldType == typeof(Vector3))
+                    {
+                        drawers.Add(new Vector3FieldDrawer(field));
+                    }
                     else if (field.FieldType.IsExtEnum())
                     {
                         drawers.Add(new EnumFieldDrawer(field, field.FieldType));
@@ -318,6 +322,26 @@ namespace SCUtils.SCDevTools.NodeTreeManager
                 if (ImGui.InputFloat2($"##{fieldInfo.Name}", ref vecVal))
                 {
                     val = new Vector2(vecVal.X, vecVal.Y);
+                    fieldInfo.SetValue(obj, val);
+                }
+            }
+        }
+
+        internal sealed class Vector3FieldDrawer : FieldDrawer
+        {
+            public Vector3FieldDrawer(FieldInfo fieldInfo) : base(fieldInfo)
+            {
+            }
+
+            internal override void Draw(FieldInfo fieldInfo, object obj)
+            {
+                Vector3 val = (Vector3)fieldInfo.GetValue(obj);
+                System.Numerics.Vector3 vecVal = new System.Numerics.Vector3(val.x, val.y, val.z);
+
+                DrawLabel(fieldInfo);
+                if (ImGui.InputFloat3($"##{fieldInfo.Name}", ref vecVal))
+                {
+                    val = new Vector3(vecVal.X, vecVal.Y, vecVal.Z);
                     fieldInfo.SetValue(obj, val);
                 }
             }

@@ -6,5 +6,5 @@ RandomItemDensity: 0
 RandomItemSpearChance: 0
 Palette: 41
 Effects: LightBurn-0.25-22-66, Bloom-0.7065217-20-20, 
-PlacedObjects: MorngingGlory><724.9287><453.3398><109~-16~2~3, MorngingGlory><898.8388><538.8208><53~-6~2~3, MorngingGlory><547.1604><361.9288><89~-10~2~3, MorngingGlory><517.7041><362.3053><0~0~2~3, 
+PlacedObjects: MorngingGlory><724.9287><453.3398><109~-16~2~3, MorngingGlory><898.8388><538.8208><53~-6~2~3, MorngingGlory><547.1604><361.9288><89~-10~2~3, MorngingGlory><517.7041><362.3053><0~0~2~3, ChandelierFlower><298.8109><468.1905><-146~-149~2~3, ChandelierFlower><370.3003><432.7601><27~8~2~3, 
 FadePalette: 18, 0.3043478

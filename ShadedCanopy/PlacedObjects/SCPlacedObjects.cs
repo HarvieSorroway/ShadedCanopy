@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,6 +14,7 @@ namespace ShadedCanopy.PlacedObjects
         {
             PlacedObjectExt.Register(new DeadlyLightExt());
             PlacedObjectExt.Register(new Objects.SCMorningGlory.SCMorningGloryPlacedObject());
+            PlacedObjectExt.Register(new Objects.SCChandelierFlower.SCChandelierFlowerPlacedObject());
             PlacedObjectExt.Register(new Objects.SCNectarPlate.SCNectarPlatePlacedObject());
             PlacedObjectExt.Register(new Objects.SCBlinkingLawn.SCBlinkingLawnRectPlacedObject());
         }

@@ -1,6 +1,7 @@
-﻿using System;
+﻿﻿﻿﻿﻿﻿﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,6 +13,7 @@ namespace ShadedCanopy
         {
             public readonly static PlacedObject.Type DeadlyLight = new PlacedObject.Type("DeadlyLight", true);
             public readonly static PlacedObject.Type MorngingGlory = new PlacedObject.Type("MorngingGlory", true);
+            public readonly static PlacedObject.Type ChandelierFlower = new PlacedObject.Type("ChandelierFlower", true);
             public readonly static PlacedObject.Type NectarPlate = new PlacedObject.Type("NectarPlate", true);
             public readonly static PlacedObject.Type BlinkingLawnRect = new PlacedObject.Type("BlinkingLawnRect", true);
         }
@@ -31,6 +33,8 @@ namespace ShadedCanopy
             public readonly static AbstractPhysicalObject.AbstractObjectType SCMorningGlory = new AbstractPhysicalObject.AbstractObjectType("SCMorningGlory", true);
             public readonly static AbstractPhysicalObject.AbstractObjectType SCMorningGloryFruit = new AbstractPhysicalObject.AbstractObjectType("SCMorningGloryFruit", true);
             public static readonly AbstractPhysicalObject.AbstractObjectType NectarPlate = new AbstractPhysicalObject.AbstractObjectType("NectarPlate", true);
+            public readonly static AbstractPhysicalObject.AbstractObjectType SCChandelierFlowerFruit = new AbstractPhysicalObject.AbstractObjectType("SCChandelierFlowerFruit", true);
+            public readonly static AbstractPhysicalObject.AbstractObjectType SCChandelierFlower = new AbstractPhysicalObject.AbstractObjectType("SCChandelierFlower", true);
         }
     }
 }

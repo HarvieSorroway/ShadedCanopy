@@ -24,6 +24,7 @@ namespace ShadedCanopy
 
             AssetBundle abna = AssetBundle.LoadFromFile(AssetManager.ResolveFilePath("AssetBundles/nabundle"));
             Objects.SCMorningGlory.SCMorningGloryHooks.LoadResources(abna);
+            Objects.SCChandelierFlower.SCChandelierFlowerHooks.LoadResources(abna);
 
             Objects.SCBlinkingLawn.SCBlinkingLawnHooks.LoadResources();
 

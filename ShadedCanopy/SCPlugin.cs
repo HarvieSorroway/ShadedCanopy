@@ -72,6 +72,9 @@ namespace ShadedCanopy
                 SCUtils.SCUtils.Init(Logger);
                 SCResources.LoadResources(self);
 
+                Objects.SCChandelierFlower.SCChandelierFlowerTest.HookTest();
+                Objects.SCChandelierFlower.SCChandelierFlowerHooks.Hook();
+
                 //ImguiRegister.TryInit();
                 Objects.SCMorningGlory.SCMorningGloryHooks.Hook();
                 Objects.SCMorningGlory.SCMorningGloryTest.HookTest(); 

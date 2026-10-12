@@ -9,7 +9,7 @@
     <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>$(DefineConstants);SC_SHOW_SHIMMER_ENERGY;SC_SHOW_VICTIM_CREATURE</DefineConstants>
+    <DefineConstants>$(DefineConstants);SC_SHOW_VICTIM_CREATURE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
